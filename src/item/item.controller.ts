@@ -24,6 +24,7 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
+import { RandomItemStatsQueryDto } from './dto/random-item-stats-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -96,6 +97,62 @@ export class ItemController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findRandom(@Query() query: ItemQueryDto) {
     return this.itemService.findRandom(query);
+  }
+
+  @Get('/random/stats')
+  @ApiOperation({
+    summary: 'Get random item for each type',
+    description:
+      'Returns one random item for each type (sc, la, cg, co) in the requested section.',
+  })
+  @ApiOkResponse({
+    description: 'Random items returned successfully',
+    schema: {
+      type: 'array',
+      items: { $ref: '#/components/schemas/ItemResponseDto' },
+      example: [
+        {
+          id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          type: 'sc',
+          section_id: '01',
+          year: 2024,
+          universal: false,
+          created_at: '2024-06-07T12:00:00.000Z',
+          updated_at: '2024-06-07T12:00:00.000Z',
+        },
+        {
+          id: 'b2c3d4e5-f678-9012-abcd-ef1234567891',
+          type: 'la',
+          section_id: '01',
+          year: 2024,
+          universal: false,
+          created_at: '2024-06-07T12:00:00.000Z',
+          updated_at: '2024-06-07T12:00:00.000Z',
+        },
+        {
+          id: 'c3d4e5f6-7890-1234-abcd-ef1234567892',
+          type: 'cg',
+          section_id: '01',
+          year: 2024,
+          universal: false,
+          created_at: '2024-06-07T12:00:00.000Z',
+          updated_at: '2024-06-07T12:00:00.000Z',
+        },
+        {
+          id: 'd4e5f678-9012-3456-abcd-ef1234567893',
+          type: 'co',
+          section_id: '01',
+          year: 2024,
+          universal: false,
+          created_at: '2024-06-07T12:00:00.000Z',
+          updated_at: '2024-06-07T12:00:00.000Z',
+        },
+      ],
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  findRandomStats(@Query() query: RandomItemStatsQueryDto) {
+    return this.itemService.findRandomStats(query);
   }
 
   // Item by id

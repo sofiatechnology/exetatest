@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { FindOptions, Op, WhereOptions, fn, col } from 'sequelize';
-import { Item } from '../models/item.model';
+import { Item, ItemTypeEnum } from '../models/item.model';
 import { ItemCourse } from '../models/item-course.model';
 import { AdminSectionItemsQueryDto } from './dto/admin-section-items-query.dto';
 import { SectionsService } from '../sections/sections.service';
@@ -13,6 +13,7 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
+import { RandomItemStatsQueryDto } from './dto/random-item-stats-query.dto';
 
 export type AdminItemSummary = {
   id: string;
@@ -141,6 +142,36 @@ export class ItemService {
     }
 
     return this.toResponse(item);
+  }
+
+  async findRandomStats(
+    query: RandomItemStatsQueryDto,
+  ): Promise<ItemResponseDto[]> {
+    const section_id = this.validateSectionId(query.section_id);
+    const types = [
+      ItemTypeEnum.SCIENCES,
+      ItemTypeEnum.LANGUES,
+      ItemTypeEnum.CULTURE_GENERALE,
+      ItemTypeEnum.COURS_OPTIONS,
+    ];
+
+    const items = await Promise.all(
+      types.map(async (type) => {
+        const item = await this.itemModel.findOne({
+          where: { section_id, type },
+          order: [fn('RANDOM')],
+        });
+        return item ? this.toResponse(item) : null;
+      }),
+    );
+
+    if (items.some((item) => item === null)) {
+      throw new NotFoundException(
+        'Unable to find one or more required item types for this section',
+      );
+    }
+
+    return items as ItemResponseDto[];
   }
 
   async update(id: string, dto: UpdateItemDto): Promise<ItemResponseDto> {
