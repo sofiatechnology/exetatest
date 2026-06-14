@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
+import { UserAuthResponseDto } from './dto/user-auth-response.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
@@ -35,11 +36,11 @@ export class UsersController {
   })
   @ApiOkResponse({
     description: 'Profile returned successfully',
-    type: ProfileResponseDto,
+    type: UserAuthResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getMyProfile(@CurrentUser() user: { id: string }) {
-    return this.usersService.getProfileByUserId(user.id);
+    return this.usersService.getUserAuthState(user.id);
   }
 
   @Patch('me/profile')
@@ -50,8 +51,8 @@ export class UsersController {
   })
   @ApiBody({ type: UpdateProfileDto })
   @ApiOkResponse({
-    description: 'Profile updated successfully',
-    type: ProfileResponseDto,
+    description: 'Profile updated successfully — returns only the updated fields',
+    schema: { type: 'object', additionalProperties: true },
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async updateMyProfile(

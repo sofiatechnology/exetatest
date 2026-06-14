@@ -99,11 +99,10 @@ export class AuthService {
       }
     }
 
-    const userState = await this.getUserAuthState(user);
+    const userState = await this.usersService.getUserAuthState(user.id);
 
     return {
       access_token: accessToken,
-      accessToken,
       user: userState,
     };
   }

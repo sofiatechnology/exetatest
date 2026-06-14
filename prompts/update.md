@@ -1,3 +1,7 @@
+Read and follow striclty @AGENTS.md file
+
+these json are values which should be send to the client after these request
+
 <!-- otp verify -->
 <!-- /api/auth/otp/verify -->
 
@@ -18,7 +22,7 @@
 }
 ```
 
-this is the response and give me a file documentation for using this api note that give the requirement necessary to make in order to use this route
+
 
 <!-- /api/users/me/profile -->
 
@@ -44,4 +48,7 @@ this is the response and give me a file documentation for using this api note th
   "section_id": "01" -> only the send the update for section id
 }
 ```
--> response should ony send the updated field and update them inside the native storage 
+-> response should ony send the updated field
+
+
+after that give me a file docs for the frontend to use this api

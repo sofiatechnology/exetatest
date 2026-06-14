@@ -20,6 +20,9 @@ type UserAuthState = {
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
+  section: string | null;
+  country: string | null;
+  region: string | null;
   current_streak: number;
   longest_streak: number;
 };
@@ -100,6 +103,9 @@ export class UsersService {
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: user.section_id ?? null,
+      section: this.resolveSectionLabel(user),
+      country: user.country ?? null,
+      region: user.region ?? null,
       current_streak: user.current_streak ?? 0,
       longest_streak: user.longest_streak ?? 0,
     };
@@ -149,7 +155,7 @@ export class UsersService {
   async updateProfile(
     userId: string,
     data: UpdateProfileDto,
-  ): Promise<ProfileResponseDto> {
+  ): Promise<Record<string, unknown>> {
     const user = await this.getUserOrFail(userId);
     console.log(data);
     // Filter out undefined values (allow null to clear fields)
@@ -206,7 +212,24 @@ export class UsersService {
       await user.reload();
     }
 
-    return this.toProfileResponse(user);
+    // Build a response containing only the fields the client requested to change.
+    const resp: Record<string, unknown> = {};
+    for (const k of Object.keys(patch)) {
+      if (k === 'section_id') {
+        resp.section_id = updatePayload.section_id ?? null;
+      } else if (k === 'section') {
+        resp.section = updatePayload.section ?? null;
+      } else if (k === 'country') {
+        resp.country = updatePayload.country ?? null;
+      } else if (k === 'region') {
+        resp.region = updatePayload.region ?? null;
+      } else {
+        // fallback — include whatever was provided
+        resp[k] = (updatePayload as Record<string, unknown>)[k];
+      }
+    }
+
+    return resp;
   }
 
   async getStreakByUserId(userId: string): Promise<UserStreakSnapshot> {

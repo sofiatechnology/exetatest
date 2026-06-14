@@ -56,7 +56,6 @@ export class AuthController {
       type: 'object',
       properties: {
         access_token: { type: 'string' },
-        accessToken: { type: 'string' },
         user: {
           type: 'object',
           properties: {
