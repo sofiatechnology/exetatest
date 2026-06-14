@@ -61,12 +61,6 @@ export class UsersController {
     return this.usersService.updateProfile(user.id, updateProfileDto);
   }
 
-  @Get('me/streak')
-  @ApiOperation({ summary: 'Get my streak' })
-  async getMyStreak(@CurrentUser() user: { id: string }) {
-    return this.usersService.getStreakByUserId(user.id);
-  }
-
   @Post('me/streak/update')
   @ApiOperation({ summary: 'Update my streak for today' })
   async updateMyStreak(@CurrentUser() user: { id: string }) {

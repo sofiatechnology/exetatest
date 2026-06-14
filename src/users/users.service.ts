@@ -151,7 +151,7 @@ export class UsersService {
     data: UpdateProfileDto,
   ): Promise<ProfileResponseDto> {
     const user = await this.getUserOrFail(userId);
-
+    console.log(data);
     // Filter out undefined values (allow null to clear fields)
     const patch = Object.fromEntries(
       Object.entries(data as Record<string, unknown>).filter(
@@ -223,7 +223,9 @@ export class UsersService {
 
   async getUserAuthState(userId: string): Promise<UserAuthState> {
     const user = await this.getUserOrFail(userId);
+    console.log(user);
     const streak = await this.updateStreak(userId);
+    console.log(streak);
     return {
       ...this.toUserAuthState(user),
       current_streak: streak.current_streak,
