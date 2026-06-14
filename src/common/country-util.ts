@@ -1,6 +1,8 @@
 import countries from './countries.json';
 
-export const isValidCountryCode = (code: string | null | undefined): boolean => {
+export const isValidCountryCode = (
+  code: string | null | undefined,
+): boolean => {
   if (!code) return false;
   try {
     const up = code.toUpperCase();
@@ -10,9 +12,12 @@ export const isValidCountryCode = (code: string | null | undefined): boolean => 
   }
 };
 
-export const normalizeCountryCode = (code: string | null | undefined): string | null => {
+export const normalizeCountryCode = (
+  code: string | null | undefined,
+): string | null => {
   if (!code) return null;
   return code.toUpperCase();
 };
 
-export const allCountryCodes = (): string[] => countries.map((c: { code: string }) => c.code);
+export const allCountryCodes = (): string[] =>
+  countries.map((c: { code: string }) => c.code);

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, WhereOptions } from 'sequelize';
@@ -13,7 +17,10 @@ import { SectionsService } from '../sections/sections.service';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
-import { isValidCountryCode, normalizeCountryCode } from '../common/country-util';
+import {
+  isValidCountryCode,
+  normalizeCountryCode,
+} from '../common/country-util';
 
 type UserAuthState = {
   id: string;
@@ -235,7 +242,7 @@ export class UsersService {
         resp.region = updatePayload.region ?? null;
       } else {
         // fallback — include whatever was provided
-        resp[k] = (updatePayload as Record<string, unknown>)[k];
+        resp[k] = updatePayload[k];
       }
     }
 

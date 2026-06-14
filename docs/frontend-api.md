@@ -113,4 +113,3 @@ Standard error shape follows NestJS `HttpException` format:
 
 ---
 
-If you need additional examples (curl, axios snippets), tell me which endpoints you want examples for.

@@ -51,7 +51,8 @@ export class UsersController {
   })
   @ApiBody({ type: UpdateProfileDto })
   @ApiOkResponse({
-    description: 'Profile updated successfully — returns only the updated fields',
+    description:
+      'Profile updated successfully — returns only the updated fields',
     schema: { type: 'object', additionalProperties: true },
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
