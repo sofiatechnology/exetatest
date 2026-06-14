@@ -96,6 +96,7 @@ Response: only the updated fields will be returned. Examples:
 Notes:
 - To clear `section_id`, send `"section_id": null` and the response will be `{ "section_id": null }`.
 - `section` (human label) is derived from `section_id` when provided; prefer updating `section_id` instead of free-text `section`.
+- `country` must be a valid ISO Alpha-2 country code (e.g. `CD`). The server validates the code against an internal country list and will return `400 Invalid country code` for unknown values.
 
 ---
 

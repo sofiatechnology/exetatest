@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op, WhereOptions } from 'sequelize';
@@ -13,6 +13,7 @@ import { SectionsService } from '../sections/sections.service';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
+import { isValidCountryCode, normalizeCountryCode } from '../common/country-util';
 
 type UserAuthState = {
   id: string;
@@ -188,7 +189,16 @@ export class UsersService {
       Object.prototype.hasOwnProperty.call(patch, 'country') &&
       !Object.prototype.hasOwnProperty.call(patch, 'section_id')
     ) {
-      updatePayload.country = patch.country;
+      const raw = patch.country as string | null;
+      if (raw === null) {
+        updatePayload.country = null;
+      } else {
+        const candidate = normalizeCountryCode(raw);
+        if (!isValidCountryCode(candidate)) {
+          throw new BadRequestException('Invalid country code');
+        }
+        updatePayload.country = candidate;
+      }
     }
 
     if (
