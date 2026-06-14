@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
@@ -16,6 +16,7 @@ import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
 import { ItemCourse } from './models/item-course.model';
 import { ItemQuestion } from './models/item-question.model';
+import { ActivityStreakInterceptor } from './common/interceptors/activity-streak.interceptor';
 
 @Module({
   imports: [
@@ -80,6 +81,10 @@ import { ItemQuestion } from './models/item-question.model';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityStreakInterceptor,
     },
   ],
 })

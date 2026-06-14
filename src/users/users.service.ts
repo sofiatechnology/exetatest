@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op, WhereOptions } from 'sequelize';
+import { Op, Transaction, WhereOptions } from 'sequelize';
 import { User, UserRoleEnum } from '../models/user.model';
 import {
   AdminUserSortField,
@@ -38,6 +38,7 @@ type UserAuthState = {
 export type UserStreakSnapshot = {
   current_streak: number;
   longest_streak: number;
+  last_activity_date: string | null;
 };
 
 export type AdminUserSummary = {
@@ -117,6 +118,33 @@ export class UsersService {
       current_streak: user.current_streak ?? 0,
       longest_streak: user.longest_streak ?? 0,
     };
+  }
+
+  static parseTimezoneOffsetMinutes(value: unknown): number {
+    const raw: unknown = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== 'string' && typeof raw !== 'number') {
+      return 0;
+    }
+
+    const offset = Number(raw);
+    if (!Number.isInteger(offset) || offset < -840 || offset > 840) {
+      return 0;
+    }
+
+    return offset;
+  }
+
+  private getLocalDateKey(date: Date, timezoneOffsetMinutes: number): string {
+    const localDate = new Date(
+      date.getTime() - timezoneOffsetMinutes * 60 * 1000,
+    );
+    return localDate.toISOString().slice(0, 10);
+  }
+
+  private addDays(dateKey: string, days: number): string {
+    const date = new Date(`${dateKey}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
   }
 
   async getUserRoles(userId: string): Promise<{ role: UserRoleEnum }[]> {
@@ -254,18 +282,85 @@ export class UsersService {
     return {
       current_streak: user.current_streak ?? 0,
       longest_streak: user.longest_streak ?? 0,
+      last_activity_date: user.last_activity_date ?? null,
     };
   }
 
-  async updateStreak(userId: string): Promise<UserStreakSnapshot> {
-    return this.getStreakByUserId(userId);
+  async updateStreak(
+    userId: string,
+    timezoneOffsetMinutes = 0,
+  ): Promise<UserStreakSnapshot> {
+    const sequelize = this.userModel.sequelize;
+    const today = this.getLocalDateKey(new Date(), timezoneOffsetMinutes);
+
+    if (!sequelize) {
+      const user = await this.getUserOrFail(userId);
+      return this.applyStreakActivity(user, today);
+    }
+
+    return sequelize.transaction(async (transaction) => {
+      const user = await this.userModel.findByPk(userId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!user) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      return this.applyStreakActivity(user, today, transaction);
+    });
   }
 
-  async getUserAuthState(userId: string): Promise<UserAuthState> {
+  private async applyStreakActivity(
+    user: User,
+    today: string,
+    transaction?: Transaction,
+  ): Promise<UserStreakSnapshot> {
+    const lastActivityDate = user.last_activity_date ?? null;
+    let currentStreak = user.current_streak ?? 0;
+    let longestStreak = user.longest_streak ?? 0;
+
+    if (
+      lastActivityDate === today ||
+      (lastActivityDate && today < lastActivityDate)
+    ) {
+      return {
+        current_streak: currentStreak,
+        longest_streak: longestStreak,
+        last_activity_date: lastActivityDate,
+      };
+    }
+
+    if (lastActivityDate && today === this.addDays(lastActivityDate, 1)) {
+      currentStreak += 1;
+    } else {
+      currentStreak = 1;
+    }
+
+    longestStreak = Math.max(longestStreak, currentStreak);
+
+    await user.update(
+      {
+        current_streak: currentStreak,
+        longest_streak: longestStreak,
+        last_activity_date: today,
+      },
+      { transaction },
+    );
+
+    return {
+      current_streak: currentStreak,
+      longest_streak: longestStreak,
+      last_activity_date: today,
+    };
+  }
+
+  async getUserAuthState(
+    userId: string,
+    timezoneOffsetMinutes = 0,
+  ): Promise<UserAuthState> {
     const user = await this.getUserOrFail(userId);
-    console.log(user);
-    const streak = await this.updateStreak(userId);
-    console.log(streak);
+    const streak = await this.updateStreak(userId, timezoneOffsetMinutes);
     return {
       ...this.toUserAuthState(user),
       current_streak: streak.current_streak,

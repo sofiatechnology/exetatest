@@ -14,6 +14,7 @@ interface UserCreationAttributes {
   section_id?: string | null;
   current_streak: number;
   longest_streak: number;
+  last_activity_date?: string | null;
 }
 
 @Table({
@@ -79,6 +80,12 @@ export class User extends Model<User, UserCreationAttributes> {
     allowNull: false,
   })
   declare longest_streak: number;
+
+  @Column({
+    type: DataType.DATEONLY,
+    allowNull: true,
+  })
+  declare last_activity_date: string | null;
 
   @Column({
     type: DataType.DATE,

@@ -16,6 +16,7 @@ CREATE TABLE "users" (
   "role" "enum_users_role" NOT NULL DEFAULT 'user',
   "current_streak" INTEGER NOT NULL DEFAULT 0,
   "longest_streak" INTEGER NOT NULL DEFAULT 0,
+  "last_activity_date" DATE,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

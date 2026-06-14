@@ -17,13 +17,6 @@ import { createHash } from 'crypto';
 import { Op } from 'sequelize';
 import { UsersService } from '../users/users.service';
 
-type UserAuthState = {
-  email: string;
-  hasSelectedSections: boolean;
-  current_streak: number;
-  longest_streak: number;
-};
-
 @Injectable()
 export class AuthService {
   private static readonly OTP_TTL_MINUTES = 10;
@@ -67,22 +60,10 @@ export class AuthService {
     return createHash('sha256').update(value, 'utf8').digest('hex');
   }
 
-  private async getUserAuthState(user: User): Promise<UserAuthState> {
-    const streak = await this.usersService.updateStreak(user.id);
-    const hasSelectedSections = Boolean(user.section_id);
-
-    return {
-      email: user.email,
-      hasSelectedSections,
-      current_streak: streak.current_streak ?? 0,
-      longest_streak: streak.longest_streak ?? 0,
-    };
-  }
-
   async login(
     user: User,
     ipAddress: string = '0.0.0.0',
-    options?: { notifyLoginEmail?: boolean },
+    options?: { notifyLoginEmail?: boolean; timezoneOffsetMinutes?: number },
   ) {
     const accessToken = await this.generateJwtToken(user);
 
@@ -99,7 +80,10 @@ export class AuthService {
       }
     }
 
-    const userState = await this.usersService.getUserAuthState(user.id);
+    const userState = await this.usersService.getUserAuthState(
+      user.id,
+      options?.timezoneOffsetMinutes,
+    );
 
     return {
       access_token: accessToken,
@@ -190,7 +174,12 @@ export class AuthService {
     return { message: 'OTP envoyé avec succès' };
   }
 
-  async verifyOTP(email: string, otp: string, ipAddress: string = '0.0.0.0') {
+  async verifyOTP(
+    email: string,
+    otp: string,
+    ipAddress: string = '0.0.0.0',
+    timezoneOffsetMinutes = 0,
+  ) {
     const normalizedEmail = email?.trim().toLowerCase();
     const user = await this.validateUser(normalizedEmail);
 
@@ -222,7 +211,10 @@ export class AuthService {
 
     await otpRow.update({ isVerified: true });
 
-    return this.login(user, ipAddress, { notifyLoginEmail: true });
+    return this.login(user, ipAddress, {
+      notifyLoginEmail: true,
+      timezoneOffsetMinutes,
+    });
   }
 
   async promoteToAdminByEmail(

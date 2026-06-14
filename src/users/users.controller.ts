@@ -1,7 +1,16 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -11,11 +20,16 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ProfileResponseDto } from './dto/profile-response.dto';
 import { UserAuthResponseDto } from './dto/user-auth-response.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
+@ApiHeader({
+  name: 'X-Timezone-Offset-Minutes',
+  required: false,
+  description:
+    'Client timezone offset in minutes from JavaScript Date.getTimezoneOffset(). Defaults to UTC when omitted.',
+})
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
@@ -39,8 +53,14 @@ export class UsersController {
     type: UserAuthResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  async getMyProfile(@CurrentUser() user: { id: string }) {
-    return this.usersService.getUserAuthState(user.id);
+  async getMyProfile(
+    @CurrentUser() user: { id: string },
+    @Headers('x-timezone-offset-minutes') timezoneOffset?: string,
+  ) {
+    return this.usersService.getUserAuthState(
+      user.id,
+      UsersService.parseTimezoneOffsetMinutes(timezoneOffset),
+    );
   }
 
   @Patch('me/profile')
@@ -65,7 +85,28 @@ export class UsersController {
 
   @Post('me/streak/update')
   @ApiOperation({ summary: 'Update my streak for today' })
-  async updateMyStreak(@CurrentUser() user: { id: string }) {
-    return this.usersService.updateStreak(user.id);
+  @ApiOkResponse({
+    description: 'Streak updated for the current local calendar day',
+    schema: {
+      type: 'object',
+      properties: {
+        current_streak: { type: 'number', example: 4 },
+        longest_streak: { type: 'number', example: 9 },
+        last_activity_date: {
+          type: 'string',
+          nullable: true,
+          example: '2026-06-14',
+        },
+      },
+    },
+  })
+  async updateMyStreak(
+    @CurrentUser() user: { id: string },
+    @Headers('x-timezone-offset-minutes') timezoneOffset?: string,
+  ) {
+    return this.usersService.updateStreak(
+      user.id,
+      UsersService.parseTimezoneOffsetMinutes(timezoneOffset),
+    );
   }
 }

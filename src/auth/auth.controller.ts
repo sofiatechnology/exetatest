@@ -1,7 +1,15 @@
 import { Controller, Post, Body, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiHeader,
+} from '@nestjs/swagger';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { MakeAdminDto } from './dto/make-admin.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -32,13 +40,19 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 404, description: 'Email not found' })
-  async sendOTP(@Body('email') email: string, @Req() req) {
-    const ipAddress = req.ip || req.connection?.remoteAddress || '0.0.0.0';
+  async sendOTP(@Body('email') email: string, @Req() req: Request) {
+    const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
     return this.authService.sendOTP(email, ipAddress);
   }
 
   @Post('otp/verify')
   @ApiOperation({ summary: 'Verify OTP and login user' })
+  @ApiHeader({
+    name: 'X-Timezone-Offset-Minutes',
+    required: false,
+    description:
+      'Client timezone offset in minutes from JavaScript Date.getTimezoneOffset(). Defaults to UTC when omitted.',
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -73,10 +87,17 @@ export class AuthController {
   async verifyOTP(
     @Body('email') email: string,
     @Body('otp') otp: string,
-    @Req() req,
+    @Req() req: Request,
   ) {
-    const ipAddress = req.ip || req.connection.remoteAddress || '0.0.0.0';
-    return this.authService.verifyOTP(email, otp, ipAddress);
+    const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    return this.authService.verifyOTP(
+      email,
+      otp,
+      ipAddress,
+      UsersService.parseTimezoneOffsetMinutes(
+        req.headers['x-timezone-offset-minutes'],
+      ),
+    );
   }
 
   @Post('make-admin')
