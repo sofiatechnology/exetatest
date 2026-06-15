@@ -70,7 +70,7 @@ async function bootstrap() {
     logger.error('Uncaught exception', error.stack);
   });
 
-  await app.listen(port, host);
+  await app.listen(port ?? 3000, host ?? '0.0.0.0');
   logger.log(`Server running on http://${host}:${port}`);
 }
 void bootstrap().catch((error: unknown) => {
