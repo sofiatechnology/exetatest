@@ -34,9 +34,40 @@ export class AllExceptionsFilter implements ExceptionFilter {
             ? exception.message
             : 'Internal server error'));
 
+    const stack =
+      exception instanceof Error ? exception.stack : JSON.stringify(exception);
+
+    let dbErrorMessage: string | null = null;
+    if (exception && typeof exception === 'object') {
+      const errObj = exception as Record<string, unknown>;
+      const originalError = errObj.original ?? errObj.parent;
+      if (originalError) {
+        if (originalError instanceof Error) {
+          dbErrorMessage = originalError.message;
+        } else if (typeof originalError === 'object') {
+          const dbErrObj = originalError as Record<string, unknown>;
+          dbErrorMessage =
+            typeof dbErrObj.message === 'string'
+              ? dbErrObj.message
+              : JSON.stringify(originalError);
+        } else {
+          dbErrorMessage =
+            typeof originalError === 'string' ||
+            typeof originalError === 'number' ||
+            typeof originalError === 'boolean'
+              ? String(originalError)
+              : JSON.stringify(originalError);
+        }
+      }
+    }
+
+    const logMessage = dbErrorMessage
+      ? `${stack}\nOriginal/Parent Database Error: ${dbErrorMessage}`
+      : stack;
+
     this.logger.error(
       `${request.method} ${request.url} -> ${status}`,
-      exception instanceof Error ? exception.stack : JSON.stringify(exception),
+      logMessage,
     );
 
     response.status(status).json({
