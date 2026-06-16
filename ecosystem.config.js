@@ -1,8 +1,8 @@
 module.exports = {
   apps: [
     {
-      name: 'nestjs-sequelize-starter',
-      script: 'dist/main.js',
+      name: 'exetatest',
+      script: 'dist/src/main.js',
       instances: 'max',
       exec_mode: 'cluster',
       env: {

@@ -7,11 +7,10 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
-    "start:prod": "node dist/main",
-    "prebuild": "rimraf dist",
+    "start:prod": "node dist/src/main",
     "postinstall": "npm run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
     "dev:api": "nest start --watch",
     "dev": "concurrently \"npm:dev:api\" \"cloudflared tunnel --url http://localhost:${PORT:-3000}\"",
     "start:debug": "nest start --debug --watch",
