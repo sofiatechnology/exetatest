@@ -8,6 +8,8 @@
   "scripts": {
     "build": "nest build",
     "start:prod": "node dist/main",
+    "prebuild": "rimraf dist",
+    "postinstall": "npm run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "node dist/main",
     "dev:api": "nest start --watch",
