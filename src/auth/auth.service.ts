@@ -38,15 +38,6 @@ export class AuthService {
     return this.userModel.findOne({ where: { email } });
   }
 
-  async createUser(email: string): Promise<User> {
-    return this.userModel.create({
-      email,
-      role: UserRoleEnum.USER,
-      current_streak: 0,
-      longest_streak: 0,
-    });
-  }
-
   private displayNameFromEmail(email: string): string {
     return email.split('@')[0] || 'Utilisateur';
   }
@@ -123,7 +114,7 @@ export class AuthService {
     let user = await this.validateUser(normalizedEmail);
 
     if (!user) {
-      user = await this.createUser(normalizedEmail);
+      user = await this.usersService.createUser(normalizedEmail);
     }
 
     const windowStart = new Date();

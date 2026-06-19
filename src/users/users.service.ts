@@ -174,6 +174,16 @@ export class UsersService {
     }));
   }
 
+  async createUser(email: string): Promise<User> {
+    const normalizedEmail = email?.trim().toLowerCase();
+    return this.userModel.create({
+      email: normalizedEmail,
+      role: UserRoleEnum.USER,
+      current_streak: 0,
+      longest_streak: 0,
+    });
+  }
+
   async promoteToAdmin(userId: string): Promise<void> {
     const user = await this.getUserOrFail(userId);
     if (user.role !== UserRoleEnum.ADMIN) {
