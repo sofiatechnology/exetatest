@@ -2,21 +2,118 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
+
+type EmailProvider = 'resend' | 'smtp';
+
+interface SendEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  appName: string;
+}
 
 @Injectable()
 export class EmailService {
-  private transporter: Transporter;
+  private readonly emailProvider: EmailProvider;
+  private readonly resend: Resend;
+  private readonly transporter?: Transporter;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<number>('SMTP_PORT'),
-      secure: this.configService.get<boolean>('SMTP_SECURE', false),
-      auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
-      },
+    this.emailProvider = this.getEmailProvider();
+    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
+
+    if (this.emailProvider === 'smtp') {
+      // NODEMAILER (DEPRECATED): kept for local fallback while Render uses Resend.
+      // this.transporter = nodemailer.createTransport({
+      //   host: this.configService.get<string>('SMTP_HOST'),
+      //   port: this.configService.get<number>('SMTP_PORT'),
+      //   secure: this.configService.get<boolean>('SMTP_SECURE', false),
+      //   auth: {
+      //     user: this.configService.get<string>('SMTP_USER'),
+      //     pass: this.configService.get<string>('SMTP_PASS'),
+      //   },
+      // });
+      this.transporter = nodemailer.createTransport({
+        host: this.configService.get<string>('SMTP_HOST'),
+        port: this.configService.get<number>('SMTP_PORT'),
+        secure: this.configService.get<boolean>('SMTP_SECURE', false),
+        auth: {
+          user: this.configService.get<string>('SMTP_USER'),
+          pass: this.configService.get<string>('SMTP_PASS'),
+        },
+      });
+    }
+  }
+
+  private getEmailProvider(): EmailProvider {
+    const provider = this.configService
+      .get<string>('EMAIL_PROVIDER', 'resend')
+      .toLowerCase();
+
+    return provider === 'smtp' || provider === 'nodemailer' ? 'smtp' : 'resend';
+  }
+
+  private getFromAddress(appName: string): string {
+    const fromEmail =
+      this.configService.get<string>('FROM_EMAIL') ??
+      this.configService.get<string>('EMAIL_FROM') ??
+      this.configService.get<string>('SMTP_FROM') ??
+      this.configService.get<string>('SMTP_USER');
+
+    if (!fromEmail) {
+      throw new Error(
+        'Email sender is not configured. Set FROM_EMAIL on Render.',
+      );
+    }
+
+    return `"${appName}" <${fromEmail}>`;
+  }
+
+  private async sendEmail(options: SendEmailOptions): Promise<void> {
+    const from = this.getFromAddress(options.appName);
+
+    if (this.emailProvider === 'smtp') {
+      if (!this.transporter) {
+        throw new Error('SMTP transporter is not configured');
+      }
+
+      // NODEMAILER (DEPRECATED): original SMTP sending path kept for fallback.
+      // await this.transporter.sendMail({
+      //   from,
+      //   to: options.to,
+      //   subject: options.subject,
+      //   html: options.html,
+      //   text: options.text,
+      // });
+      await this.transporter.sendMail({
+        from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      });
+      return;
+    }
+
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
+    }
+
+    const { error } = await this.resend.emails.send({
+      from,
+      to: [options.to],
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
     });
+
+    if (error) {
+      throw new Error(`Resend email failed: ${error.message}`);
+    }
   }
 
   async sendLoginNotification(
@@ -40,11 +137,19 @@ export class EmailService {
       appUrl,
     );
 
-    await this.transporter.sendMail({
-      from: `"${appName}" <${this.configService.get<string>('SMTP_FROM')}>`,
+    await this.sendEmail({
+      appName,
       to: email,
       subject: 'Connexion détectée : nouvel appareil ou nouvel emplacement ?',
       html: htmlContent,
+      text: this.getLoginNotificationText(
+        name,
+        email,
+        appName,
+        ipAddress,
+        timestamp,
+        appUrl,
+      ),
     });
   }
 
@@ -70,11 +175,12 @@ export class EmailService {
       appUrl,
     );
 
-    await this.transporter.sendMail({
-      from: `"${appName}" <${this.configService.get<string>('SMTP_FROM')}>`,
+    await this.sendEmail({
+      appName,
       to: email,
       subject: 'Votre code OTP de connexion',
       html: htmlContent,
+      text: this.getOTPText(name, appName, otp, ipAddress, timestamp, appUrl),
     });
   }
 
@@ -96,12 +202,40 @@ export class EmailService {
       appUrl,
     );
 
-    await this.transporter.sendMail({
-      from: `"${appName}" <${this.configService.get<string>('SMTP_FROM')}>`,
+    await this.sendEmail({
+      appName,
       to: email,
       subject: `On vous attend sur ${appName}`,
       html: htmlContent,
+      text: this.getInactivityReminderText(
+        name,
+        inactivityDays,
+        appName,
+        appUrl,
+      ),
     });
+  }
+
+  private formatTimestamp(timestamp: Date): string {
+    return timestamp.toISOString().replace('T', ' ').substring(0, 19);
+  }
+
+  private getInactivityReminderText(
+    name: string,
+    inactivityDays: number,
+    appName: string,
+    appUrl: string,
+  ): string {
+    return `Bonjour ${name},
+
+Ca fait ${inactivityDays} jours qu'on ne vous a pas vu(e) sur ${appName}.
+
+Une petite seance aujourd'hui peut relancer votre progression :
+${appUrl}
+
+Si vous n'avez plus acces a ce compte, ignorez simplement cet email.
+
+A tres vite !`;
   }
 
   private getInactivityReminderTemplate(
@@ -175,10 +309,7 @@ export class EmailService {
     timestamp: Date,
     appUrl: string,
   ): string {
-    const formattedDate = timestamp
-      .toISOString()
-      .replace('T', ' ')
-      .substring(0, 19);
+    const formattedDate = this.formatTimestamp(timestamp);
 
     return `
 <!DOCTYPE html>
@@ -253,6 +384,31 @@ export class EmailService {
     `;
   }
 
+  private getOTPText(
+    name: string,
+    appName: string,
+    otp: string,
+    ipAddress: string,
+    timestamp: Date,
+    appUrl: string,
+  ): string {
+    const formattedDate = this.formatTimestamp(timestamp);
+
+    return `Bonjour ${name},
+
+Vous avez demande a vous connecter a votre compte ${appName}.
+
+Votre code OTP : ${otp}
+
+Ce code expire dans 10 minutes. Ne le partagez avec personne.
+
+Date : ${formattedDate} (UTC)
+Adresse IP : ${ipAddress}
+
+Si vous n'etes pas a l'origine de cette demande, ignorez cet email ou contactez le support :
+${appUrl}/support`;
+  }
+
   private getLoginNotificationTemplate(
     name: string,
     email: string,
@@ -261,8 +417,7 @@ export class EmailService {
     timestamp: Date,
     appUrl: string,
   ): string {
-    const formattedDate =
-      timestamp.toISOString().replace('T', ' ').substring(0, 19) + ' (UTC)';
+    const formattedDate = this.formatTimestamp(timestamp) + ' (UTC)';
 
     return `
 <!DOCTYPE html>
@@ -345,6 +500,31 @@ export class EmailService {
     `;
   }
 
+  private getLoginNotificationText(
+    name: string,
+    email: string,
+    appName: string,
+    ipAddress: string,
+    timestamp: Date,
+    appUrl: string,
+  ): string {
+    const formattedDate = this.formatTimestamp(timestamp) + ' (UTC)';
+
+    return `Bonjour ${name},
+
+Nous avons detecte une connexion a votre compte ${appName} (${email}) depuis une nouvelle adresse IP.
+
+Date : ${formattedDate}
+Adresse IP : ${ipAddress}
+
+Acceder a votre compte :
+${appUrl}
+
+Vous ne reconnaissez pas cette activite ? Reinitialisez votre mot de passe et contactez le support immediatement :
+${appUrl}/reset-password
+${appUrl}/support`;
+  }
+
   async sendSetInvitation(
     email: string,
     inviterName: string,
@@ -366,12 +546,32 @@ export class EmailService {
       appUrl,
     );
 
-    await this.transporter.sendMail({
-      from: `"${appName}" <${this.configService.get<string>('SMTP_USER')}>`,
+    await this.sendEmail({
+      appName,
       to: email,
       subject: `Invitation : rejoindre « ${setTitle} » sur ${appName}`,
       html: htmlContent,
+      text: this.getSetInvitationText(inviterName, setTitle, appName, appUrl),
     });
+  }
+
+  private getSetInvitationText(
+    inviterName: string,
+    setTitle: string,
+    appName: string,
+    appUrl: string,
+  ): string {
+    return `Bonjour,
+
+${inviterName} vous a invite(e) a rejoindre un ensemble de quiz sur ${appName}.
+
+Ensemble de quiz : "${setTitle}"
+
+Voir l'invitation :
+${appUrl}/invitations
+
+Vous n'avez pas encore de compte ? Inscrivez-vous pour commencer :
+${appUrl}/signup`;
   }
 
   private getSetInvitationTemplate(

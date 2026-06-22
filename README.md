@@ -44,7 +44,7 @@ In a country where access to quality educational technology is still rare, this 
 | Language | TypeScript v5 |
 | Database | PostgreSQL |
 | Auth | JWT + OTP (passwordless) |
-| Email | Nodemailer / SMTP |
+| Email | Resend (default) + Nodemailer / SMTP fallback |
 | Validation | class-validator / class-transformer |
 | Config | @nestjs/config / dotenv |
 
@@ -75,7 +75,7 @@ Each feature module follows the same shape: `dto/`, `*.controller.ts`, `*.servic
 
 - Node.js (LTS)
 - PostgreSQL
-- An SMTP account for sending OTP emails (Gmail, Mailtrap, etc.)
+- A Resend API key and verified sender domain for OTP emails
 
 ### Setup
 
@@ -86,7 +86,7 @@ npm install
 cp .env.example .env
 ```
 
-Fill in your `.env` file with your database and SMTP credentials, then run:
+Fill in your `.env` file with your database and email credentials, then run:
 
 ```bash
 npm run start:dev
