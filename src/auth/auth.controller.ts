@@ -42,7 +42,13 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Email not found' })
   async sendOTP(@Body('email') email: string, @Req() req: Request) {
     const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
-    return this.authService.sendOTP(email, ipAddress);
+    try {
+      return await this.authService.sendOTP(email, ipAddress);
+    } catch (error) {
+      console.log('[POST /auth/otp/send] Error:', error);
+      throw error;
+    }
+    // return this.authService.sendOTP(email, ipAddress);
   }
 
   @Post('otp/verify')
