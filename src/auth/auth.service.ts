@@ -158,7 +158,7 @@ export class AuthService {
         new Date(),
       );
     } catch (error) {
-      // console.error('Failed to send OTP email:', error);
+      console.error('Failed to send OTP email:', error);
       throw new Error("Échec de l'envoi de l'OTP par email");
     }
 
