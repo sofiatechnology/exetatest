@@ -14,7 +14,6 @@ The API powers:
 
 - Authenticated user (admin|user) dashboards
 - Quiz(ITEM) questions
-- Custom test sets and invitations
 - Profile editing and admin content management
 - Offline sync support and cached API responses
 - Clean, consistent REST API consumed by the mobile app
@@ -117,8 +116,12 @@ src/
   app.module.ts
   main.ts
 scripts/
-  seed-sociales.sh
-  seed-sociales.sql
+  migrations/
+    001-initial-schema.sql
+    002-add-user-last-activity-date.sql
+  grant-admin.js
+  reset-database.js
+  sync-database.js
 ```
 
 ---
