@@ -30,7 +30,7 @@
     "grant:admin": "ts-node -r tsconfig-paths/register scripts/grant-admin.ts",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
-    "seed:techniques-sociales": "bash scripts/seed-techniques-sociales.sh"
+    "seed:items": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seed-items.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
