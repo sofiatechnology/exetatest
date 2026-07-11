@@ -80,7 +80,7 @@ Each feature module follows the same shape: `dto/`, `*.controller.ts`, `*.servic
 ### Setup
 
 ```bash
-git clone https://github.com/your-org/exetatest.git
+git clone https://github.com/sofiatechnology/exetatest
 cd exetatest
 npm install
 cp .env.example .env
