@@ -22,7 +22,17 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Enable CORS for all origins
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'https://exetatest--mw6arykang.expo.app',
+      'https://exetatest.vercel.app',
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(
     new ValidationPipe({
