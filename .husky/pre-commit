@@ -5,3 +5,4 @@ echo "Running format before commit..."
 npm run format
 echo "Running build before commit..."
 npm run build
+git add .

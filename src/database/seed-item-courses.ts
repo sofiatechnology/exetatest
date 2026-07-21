@@ -12,7 +12,7 @@ const COURSES_BY_TYPE: Record<ItemTypeEnum, string[]> = {
     'Histoire',
     'Géographie',
     'Philosophie',
-    "Éducation",
+    'Éducation',
     'Littérature francophone',
     'Art',
     "Histoire l'Afrique",
