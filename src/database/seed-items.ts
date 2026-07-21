@@ -39,7 +39,7 @@ const SECTIONS = [
 ];
 
 const ITEM_TYPES = Object.values(ItemTypeEnum);
-const START_YEAR = 1967;
+const START_YEAR = 2015;
 const END_YEAR = 2026;
 
 async function bootstrap() {
