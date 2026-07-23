@@ -1,0 +1,15 @@
+================================================================================
+SCIENCE - Session 2020
+URL: https://www.schoolap.com/exetats/488/science/physique
+================================================================================
+
+TOTAL QUESTIONS: 1
+
+QUESTION 1
+--------------------------------------------------
+Un fermier achète 3 éléments chauffants de valeurs 0,57 K$2, 1,61 K0 et 1,38 K9 pour réaliser une couveuse. Les œufs sontplacés sur un treillis commandé par un moteur asynchrone monophasé à condensateur démarré en 2 temps. Le basculement du treillisest limité par 2 capteurs de position (haut et bas).Conditions de fonctionnement1. La couveuse devra développer 120 w pendant l'incubation et 150 W à la période proche de l'éclosion (‡ 3 jours).2. La mise en route des éléments chauffants se fait sous faible consommation.3. La température (puissance) d'incubation ou d'éclosion ainsi que le mouvement du treillis sont obtenus librement par l'opérateur.4. La température intérieure de la couveuse est contrôlée par une thermistance à coefficient de température négative, un transistorNPN (émetteur commun) et un contacteur alimenté en DC.5. Le basculement du treillis de la position basse à la position haute s'opère avec arrêt d'une minute avant sa reprise à la positioninitiale.Travail demandé.1. Par une étude numérique détaillée, donner la plage de raccordement qui optimise le mieux la consommation des éléments chauffantssous une tension de 220 V - 50 Hz (8 pts)2. Représentez les schémas de puissance (10 pts)et le schéma de commande.(7 pts)
+
+  (No options available)
+
+--------------------------------------------------
+
