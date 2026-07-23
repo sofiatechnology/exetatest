@@ -1,0 +1,20 @@
+1. Agriculture Génér
+2. Chimie industrielle
+3. Commercial Admin (Gestion)
+4. Commercial informatique
+5. Construction
+6. Coupe-couture
+7. Électronique
+8. Foresterie
+9. Latin-philo
+10. Maths physique
+11. Mécanique Auto
+12. Mécanique Gen 
+13. Normale
+14. Nutrition
+15. Pêche et navigation
+16. Pédagogie Générale
+17. Secrétariat
+18. Secrétariat informatique
+19. Sociale
+20. Vétérinaire

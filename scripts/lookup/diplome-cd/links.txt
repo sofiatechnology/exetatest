@@ -1,0 +1,45 @@
+https://www.diplome.cd/exetats/show/17
+https://manuels-scolaires-rdc.com/exetat/
+
+# Liste des Sections et Options des Humanités en RDC
+
+## 1. Section Enseignement Général
+* **Latin-Philosophie (Latin-Philo)**
+* **Mathématique-Physique (Math-Phys)**
+* **Chimie-Biologie (Bio-Chimie)**
+* **Latin-Grec**
+* **Latin-Mathématique**
+
+## 2. Section Enseignement Normal (Pédagogique)
+* **Pédagogie Générale**
+* **Pédagogie Maternelle / Préscolaire**
+* **Éducation Physique**
+
+## 3. Section Enseignement Technique et Professionnel
+
+### Commerciale, Informatique et Gestion
+* **Commerciale et Gestion**
+* **Informatique de Gestion**
+
+### Techniques Sociales et Services
+* **Techniques Sociales (Sociale)**
+* **Hôtellerie et Restauration**
+* **Hôtesse d'accueil**
+* **Coupe et Couture (Habillement)**
+
+### Techniques Industrielles
+* **Mécanique Générale**
+* **Mécanique Automobile**
+* **Électricité / Électronique Industrielle**
+* **Construction / Bâtiment et Travaux Publics (BTP)**
+* **Chimie Industrielle**
+
+### Techniques Agricoles et Vétérinaires
+* **Agricole / Foresterie**
+* **Vétérinaire**
+* **Nutrition / Industries Agricoles**
+
+### Techniques Médicales
+* **Infirmière / Accoucheuse**
+* **Technicien de Laboratoire**
+* **Pharmacie**

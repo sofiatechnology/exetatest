@@ -32,6 +32,7 @@
     "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
     "seed:items": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seed-items.ts",
     "seed:courses": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seed-item-courses.ts",
+    "seed:cleanup": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/clean-db.ts",
     "seed:all": "npm run seed:items && npm run seed:courses"
   },
   "dependencies": {
