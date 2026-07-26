@@ -1,0 +1,36 @@
+/**
+ * Brand colors for transactional emails (light theme).
+ * Matches the EXETATEST / Scratch mobile palette.
+ */
+export const emailColors = {
+  primary: '#456731',
+  onPrimary: '#FFFFFF',
+  primaryContainer: '#C6EEAA',
+  onPrimaryContainer: '#2E4F1C',
+  secondary: '#55624C',
+  onSecondary: '#FFFFFF',
+  secondaryContainer: '#D9E7CA',
+  onSecondaryContainer: '#3E4A35',
+  tertiary: '#386666',
+  onTertiary: '#FFFFFF',
+  tertiaryContainer: '#BBEBEB',
+  onTertiaryContainer: '#1E4E4E',
+  error: '#BA1A1A',
+  onError: '#FFFFFF',
+  errorContainer: '#FFDAD6',
+  onErrorContainer: '#93000A',
+  background: '#F8FAF0',
+  onBackground: '#191D16',
+  surface: '#F8FAF0',
+  onSurface: '#191D16',
+  surfaceVariant: '#E0E4D6',
+  onSurfaceVariant: '#43483E',
+  outline: '#74796D',
+  outlineVariant: '#C3C8BB',
+  surfaceContainerLow: '#F3F5EA',
+  surfaceContainer: '#EDEFE4',
+  surfaceContainerHigh: '#E7E9DF',
+  surfaceContainerHighest: '#E1E4D9',
+  inversePrimary: '#AAD290',
+  white: '#FFFFFF',
+} as const;

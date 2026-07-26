@@ -16,6 +16,8 @@ import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
 import { ItemCourse } from './models/item-course.model';
 import { ItemQuestion } from './models/item-question.model';
+import { EmailSuppression } from './models/email-suppression.model';
+import { WebhookEvent } from './models/webhook-event.model';
 import { ActivityStreakInterceptor } from './common/interceptors/activity-streak.interceptor';
 
 @Module({
@@ -67,7 +69,15 @@ import { ActivityStreakInterceptor } from './common/interceptors/activity-streak
       },
       inject: [ConfigService],
     }),
-    SequelizeModule.forFeature([User, Otp, Item, ItemCourse, ItemQuestion]),
+    SequelizeModule.forFeature([
+      User,
+      Otp,
+      Item,
+      ItemCourse,
+      ItemQuestion,
+      EmailSuppression,
+      WebhookEvent,
+    ]),
     EmailModule,
     AuthModule,
     SectionsModule,

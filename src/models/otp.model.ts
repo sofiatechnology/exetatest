@@ -1,6 +1,7 @@
 import {
   Column,
   DataType,
+  Default,
   Model,
   Table,
   ForeignKey,
@@ -13,6 +14,8 @@ interface OtpCreationAttributes {
   code: string;
   expiresAt: Date;
   isVerified?: boolean;
+  attemptCount?: number;
+  requestIp?: string | null;
 }
 
 @Table({
@@ -49,11 +52,25 @@ export class Otp extends Model<Otp, OtpCreationAttributes> {
   })
   declare expiresAt: Date;
 
+  @Default(false)
   @Column({
     type: DataType.BOOLEAN,
-    defaultValue: false,
+    allowNull: false,
   })
   declare isVerified: boolean;
+
+  @Default(0)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  declare attemptCount: number;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare requestIp: string | null;
 
   declare createdAt: Date;
   declare updatedAt: Date;

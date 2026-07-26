@@ -12,6 +12,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
+    "jsx": "react-jsx",
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "src",
@@ -26,6 +27,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "src/**/*.json",
     "test/**/*.ts",
     "scripts/**/*.ts"

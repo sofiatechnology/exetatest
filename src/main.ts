@@ -1,22 +1,33 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
+import { join } from 'path';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     abortOnError: false,
+    rawBody: true,
   });
   const port = Number(process.env.PORT ?? 9080);
   const host = process.env.HOST ?? '0.0.0.0';
   const isProduction = process.env.NODE_ENV === 'production';
   const enableSwagger = process.env.ENABLE_SWAGGER === 'true' || !isProduction;
 
+  // Correct client IP behind Render / reverse proxies
+  app.set('trust proxy', 1);
+
   // Enable compression middleware
   app.use(compression());
+
+  // Logo and email assets (absolute URLs used in React Email templates)
+  app.useStaticAssets(join(__dirname, 'email', 'templates', 'static'), {
+    prefix: '/email-assets',
+  });
 
   // Set global prefix for routes
   app.setGlobalPrefix('api');

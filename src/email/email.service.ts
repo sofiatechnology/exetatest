@@ -1,10 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/sequelize';
+import { createHmac } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { Resend } from 'resend';
+import { Webhook } from 'svix';
+import {
+  EmailSuppression,
+  EmailSuppressionReason,
+} from '../models/email-suppression.model';
+import { WebhookEvent } from '../models/webhook-event.model';
+import {
+  renderInactivityReminderEmail,
+  renderLoginNotificationEmail,
+  renderOtpEmail,
+  renderSetInvitationEmail,
+} from './email.renderer';
 
-type EmailProvider = 'resend' | 'smtp';
+/**
+ * smtp          — Nodemailer only
+ * resend        — Resend only
+ * smtp-resend   — Nodemailer primary, Resend fallback on failure (default)
+ */
+type EmailStrategy = 'smtp' | 'resend' | 'smtp-resend';
 
 interface SendEmailOptions {
   to: string;
@@ -12,47 +36,107 @@ interface SendEmailOptions {
   html: string;
   text: string;
   appName: string;
+  idempotencyKey?: string;
+  headers?: Record<string, string>;
+  tags?: Array<{ name: string; value: string }>;
+  /** Marketing-like emails must check unsubscribe suppression */
+  category?: 'transactional' | 'marketing';
+}
+
+interface ResendWebhookPayload {
+  type?: string;
+  created_at?: string;
+  data?: {
+    email_id?: string;
+    to?: string[] | string;
+    bounce?: { type?: string; message?: string };
+    [key: string]: unknown;
+  };
 }
 
 @Injectable()
 export class EmailService {
-  private readonly emailProvider: EmailProvider;
-  private readonly resend: Resend;
+  private readonly logger = new Logger(EmailService.name);
+  private readonly emailStrategy: EmailStrategy;
+  private readonly resend?: Resend;
   private readonly transporter?: Transporter;
 
-  constructor(private configService: ConfigService) {
-    this.emailProvider = this.getEmailProvider();
-    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
+  private static readonly SOFT_BOUNCE_SUPPRESS_THRESHOLD = 3;
+  private static readonly DEFAULT_APP_NAME = 'EXETATEST';
 
-    if (this.emailProvider === 'smtp') {
-      // NODEMAILER (DEPRECATED): kept for local fallback while Render uses Resend.
-      // this.transporter = nodemailer.createTransport({
-      //   host: this.configService.get<string>('SMTP_HOST'),
-      //   port: this.configService.get<number>('SMTP_PORT'),
-      //   secure: this.configService.get<boolean>('SMTP_SECURE', false),
-      //   auth: {
-      //     user: this.configService.get<string>('SMTP_USER'),
-      //     pass: this.configService.get<string>('SMTP_PASS'),
-      //   },
-      // });
+  constructor(
+    private configService: ConfigService,
+    @InjectModel(EmailSuppression)
+    private emailSuppressionModel: typeof EmailSuppression,
+    @InjectModel(WebhookEvent)
+    private webhookEventModel: typeof WebhookEvent,
+  ) {
+    this.emailStrategy = this.getEmailStrategy();
+
+    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (resendApiKey) {
+      this.resend = new Resend(resendApiKey);
+    }
+
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    if (smtpHost && smtpUser) {
       this.transporter = nodemailer.createTransport({
-        host: this.configService.get<string>('SMTP_HOST'),
-        port: this.configService.get<number>('SMTP_PORT'),
+        host: smtpHost,
+        port: this.configService.get<number>('SMTP_PORT', 587),
         secure: this.configService.get<boolean>('SMTP_SECURE', false),
         auth: {
-          user: this.configService.get<string>('SMTP_USER'),
+          user: smtpUser,
           pass: this.configService.get<string>('SMTP_PASS'),
         },
       });
     }
+
+    this.logger.log(`Stratégie email: ${this.emailStrategy}`);
   }
 
-  private getEmailProvider(): EmailProvider {
+  private getEmailStrategy(): EmailStrategy {
     const provider = this.configService
-      .get<string>('EMAIL_PROVIDER', 'resend')
+      .get<string>('EMAIL_PROVIDER', 'smtp-resend')
       .toLowerCase();
 
-    return provider === 'smtp' || provider === 'nodemailer' ? 'smtp' : 'resend';
+    if (provider === 'resend') {
+      return 'resend';
+    }
+
+    if (
+      provider === 'smtp' ||
+      provider === 'nodemailer' ||
+      provider === 'smtp-only'
+    ) {
+      return 'smtp';
+    }
+
+    // Default and aliases: nodemailer primary + Resend fallback
+    return 'smtp-resend';
+  }
+
+  private getAppName(): string {
+    return (
+      this.configService.get<string>('APP_NAME') ??
+      EmailService.DEFAULT_APP_NAME
+    );
+  }
+
+  private getAppUrl(): string {
+    return (
+      this.configService.get<string>('FRONTEND_URL') ??
+      this.configService.get<string>('APP_URL') ??
+      'http://localhost:5173'
+    );
+  }
+
+  private getApiBaseUrl(): string {
+    return (
+      this.configService.get<string>('BASE_URL') ??
+      this.configService.get<string>('APP_URL') ??
+      'http://localhost:9080'
+    );
   }
 
   private getFromAddress(appName: string): string {
@@ -64,56 +148,287 @@ export class EmailService {
 
     if (!fromEmail) {
       throw new Error(
-        'Email sender is not configured. Set FROM_EMAIL on Render.',
+        "L'expéditeur email n'est pas configuré. Définissez FROM_EMAIL.",
       );
     }
 
     return `"${appName}" <${fromEmail}>`;
   }
 
-  private async sendEmail(options: SendEmailOptions): Promise<void> {
-    const from = this.getFromAddress(options.appName);
+  private getReplyTo(): string | undefined {
+    return (
+      this.configService.get<string>('EMAIL_REPLY_TO') ??
+      this.configService.get<string>('SUPPORT_EMAIL') ??
+      undefined
+    );
+  }
 
-    if (this.emailProvider === 'smtp') {
-      if (!this.transporter) {
-        throw new Error('SMTP transporter is not configured');
-      }
+  private getLogoUrl(): string {
+    const assetsBase = this.configService.get<string>('EMAIL_ASSETS_URL');
+    if (assetsBase) {
+      return assetsBase.replace(/\/$/, '');
+    }
 
-      // NODEMAILER (DEPRECATED): original SMTP sending path kept for fallback.
-      // await this.transporter.sendMail({
-      //   from,
-      //   to: options.to,
-      //   subject: options.subject,
-      //   html: options.html,
-      //   text: options.text,
-      // });
-      await this.transporter.sendMail({
-        from,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
+    return `${this.getApiBaseUrl().replace(/\/$/, '')}/email-assets/logo.png`;
+  }
+
+  private getUnsubscribeSecret(): string {
+    return (
+      this.configService.get<string>('UNSUBSCRIBE_SECRET') ??
+      this.configService.get<string>('OTP_PEPPER') ??
+      this.configService.get<string>('JWT_SECRET') ??
+      'dev-unsubscribe-secret'
+    );
+  }
+
+  buildUnsubscribeToken(email: string): string {
+    return createHmac('sha256', this.getUnsubscribeSecret())
+      .update(`unsubscribe:${email.trim().toLowerCase()}`, 'utf8')
+      .digest('hex')
+      .slice(0, 32);
+  }
+
+  buildUnsubscribeUrl(email: string): string {
+    const token = this.buildUnsubscribeToken(email);
+    const base = this.getApiBaseUrl().replace(/\/$/, '');
+    const params = new URLSearchParams({
+      email: email.trim().toLowerCase(),
+      token,
+    });
+    return `${base}/api/email/unsubscribe?${params.toString()}`;
+  }
+
+  async isSuppressed(email: string): Promise<boolean> {
+    const row = await this.emailSuppressionModel.findOne({
+      where: { email: email.trim().toLowerCase() },
+    });
+
+    if (!row) {
+      return false;
+    }
+
+    if (row.reason === EmailSuppressionReason.SOFT_BOUNCE) {
+      return row.softBounceCount >= EmailService.SOFT_BOUNCE_SUPPRESS_THRESHOLD;
+    }
+
+    return true;
+  }
+
+  async suppressEmail(
+    email: string,
+    reason: EmailSuppressionReason,
+  ): Promise<void> {
+    const normalized = email.trim().toLowerCase();
+    const existing = await this.emailSuppressionModel.findOne({
+      where: { email: normalized },
+    });
+
+    if (!existing) {
+      await this.emailSuppressionModel.create({
+        email: normalized,
+        reason,
+        softBounceCount: reason === EmailSuppressionReason.SOFT_BOUNCE ? 1 : 0,
       });
       return;
     }
 
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    // Never downgrade complaint / hard bounce / unsubscribe
+    const permanentReasons = [
+      EmailSuppressionReason.HARD_BOUNCE,
+      EmailSuppressionReason.COMPLAINT,
+      EmailSuppressionReason.UNSUBSCRIBE,
+    ];
 
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
+    if (permanentReasons.includes(existing.reason)) {
+      return;
     }
 
-    const { error } = await this.resend.emails.send({
+    if (reason === EmailSuppressionReason.SOFT_BOUNCE) {
+      const next = existing.softBounceCount + 1;
+      await existing.update({
+        softBounceCount: next,
+        reason:
+          next >= EmailService.SOFT_BOUNCE_SUPPRESS_THRESHOLD
+            ? EmailSuppressionReason.SOFT_BOUNCE
+            : existing.reason,
+      });
+      return;
+    }
+
+    await existing.update({ reason });
+  }
+
+  async unsubscribe(
+    email: string,
+    token: string,
+  ): Promise<{ data: { email: string }; message: string }> {
+    const normalized = email?.trim().toLowerCase();
+    if (!normalized || !token) {
+      throw new BadRequestException('Email et token requis');
+    }
+
+    const expected = this.buildUnsubscribeToken(normalized);
+    if (token !== expected) {
+      throw new UnauthorizedException('Lien de désinscription invalide');
+    }
+
+    await this.suppressEmail(normalized, EmailSuppressionReason.UNSUBSCRIBE);
+
+    return {
+      data: { email: normalized },
+      message: 'Vous êtes désinscrit(e) des emails de relance.',
+    };
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private isRetryableResendError(error: { statusCode?: number }): boolean {
+    const status = error.statusCode;
+    return status === 429 || (typeof status === 'number' && status >= 500);
+  }
+
+  private async sendViaSmtp(
+    options: SendEmailOptions,
+    normalizedTo: string,
+    from: string,
+    replyTo?: string,
+  ): Promise<void> {
+    if (!this.transporter) {
+      throw new Error(
+        "Nodemailer n'est pas configuré (SMTP_HOST / SMTP_USER requis)",
+      );
+    }
+
+    await this.transporter.sendMail({
       from,
-      to: [options.to],
+      to: normalizedTo,
       subject: options.subject,
       html: options.html,
       text: options.text,
+      replyTo,
+      headers: options.headers,
     });
+  }
 
-    if (error) {
-      throw new Error(`Resend email failed: ${error.message}`);
+  private async sendViaResend(
+    options: SendEmailOptions,
+    normalizedTo: string,
+    from: string,
+    replyTo?: string,
+  ): Promise<void> {
+    if (!this.resend) {
+      throw new Error("Resend n'est pas configuré (RESEND_API_KEY requis)");
     }
+
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const { data, error } = await this.resend.emails.send(
+        {
+          from,
+          to: [normalizedTo],
+          subject: options.subject,
+          html: options.html,
+          text: options.text,
+          replyTo,
+          headers: options.headers,
+          tags: options.tags,
+        },
+        options.idempotencyKey
+          ? { idempotencyKey: options.idempotencyKey }
+          : undefined,
+      );
+
+      if (!error) {
+        this.logger.debug(`Email envoyé via Resend: ${data?.id ?? 'ok'}`);
+        return;
+      }
+
+      lastError = new Error(`Resend email failed: ${error.message}`);
+      const statusCode =
+        'statusCode' in error
+          ? (error as { statusCode?: number }).statusCode
+          : undefined;
+
+      if (
+        !this.isRetryableResendError({ statusCode }) ||
+        attempt === maxRetries - 1
+      ) {
+        throw lastError;
+      }
+
+      const delay = Math.min(1000 * 2 ** attempt, 8000);
+      await this.sleep(delay);
+    }
+
+    throw lastError ?? new Error('Échec envoi Resend inconnu');
+  }
+
+  private async sendEmail(
+    options: SendEmailOptions,
+  ): Promise<'sent' | 'suppressed'> {
+    const normalizedTo = options.to.trim().toLowerCase();
+
+    if (await this.isSuppressed(normalizedTo)) {
+      this.logger.warn(
+        `Envoi ignoré: ${normalizedTo} est sur la liste de suppression`,
+      );
+      return 'suppressed';
+    }
+
+    const from = this.getFromAddress(options.appName);
+    const replyTo = this.getReplyTo();
+
+    if (this.emailStrategy === 'resend') {
+      await this.sendViaResend(options, normalizedTo, from, replyTo);
+      return 'sent';
+    }
+
+    if (this.emailStrategy === 'smtp') {
+      await this.sendViaSmtp(options, normalizedTo, from, replyTo);
+      this.logger.debug(`Email envoyé via Nodemailer à ${normalizedTo}`);
+      return 'sent';
+    }
+
+    // Default: Nodemailer primary, Resend fallback
+    try {
+      await this.sendViaSmtp(options, normalizedTo, from, replyTo);
+      this.logger.debug(`Email envoyé via Nodemailer à ${normalizedTo}`);
+      return 'sent';
+    } catch (smtpError) {
+      this.logger.warn(
+        `Nodemailer a échoué, bascule vers Resend: ${
+          smtpError instanceof Error ? smtpError.message : String(smtpError)
+        }`,
+      );
+
+      try {
+        await this.sendViaResend(options, normalizedTo, from, replyTo);
+        this.logger.log(`Email envoyé via Resend (fallback) à ${normalizedTo}`);
+        return 'sent';
+      } catch (resendError) {
+        this.logger.error(
+          `Échec Nodemailer et Resend pour ${normalizedTo}`,
+          resendError instanceof Error
+            ? resendError.stack
+            : String(resendError),
+        );
+        throw new Error(
+          `Échec envoi email (SMTP puis Resend): ${
+            resendError instanceof Error
+              ? resendError.message
+              : String(resendError)
+          }`,
+        );
+      }
+    }
+  }
+
+  private formatTimestamp(timestamp: Date): string {
+    return timestamp.toISOString().replace('T', ' ').substring(0, 19);
   }
 
   async sendLoginNotification(
@@ -122,34 +437,28 @@ export class EmailService {
     ipAddress: string,
     timestamp: Date,
   ): Promise<void> {
-    const appName = this.configService.get<string>('APP_NAME', 'EXETAT Test');
-    const appUrl = this.configService.get<string>(
-      'APP_URL',
-      'http://localhost:3000',
-    );
+    const appName = this.getAppName();
+    const appUrl = this.getAppUrl();
 
-    const htmlContent = this.getLoginNotificationTemplate(
+    const { html, text } = await renderLoginNotificationEmail({
       name,
       email,
       appName,
       ipAddress,
-      timestamp,
+      formattedDate: `${this.formatTimestamp(timestamp)} (UTC)`,
       appUrl,
-    );
+      logoUrl: this.getLogoUrl(),
+    });
 
     await this.sendEmail({
       appName,
       to: email,
       subject: 'Connexion détectée : nouvel appareil ou nouvel emplacement ?',
-      html: htmlContent,
-      text: this.getLoginNotificationText(
-        name,
-        email,
-        appName,
-        ipAddress,
-        timestamp,
-        appUrl,
-      ),
+      html,
+      text,
+      category: 'transactional',
+      idempotencyKey: `login-${email}-${timestamp.toISOString().slice(0, 16)}`,
+      tags: [{ name: 'category', value: 'transactional' }],
     });
   }
 
@@ -159,29 +468,37 @@ export class EmailService {
     otp: string,
     ipAddress: string,
     timestamp: Date,
+    otpId: string,
   ): Promise<void> {
-    const appName = this.configService.get<string>('APP_NAME', 'EXETATEST');
-    const appUrl = this.configService.get<string>(
-      'APP_URL',
-      'http://localhost:3000',
-    );
+    const appName = this.getAppName();
+    const appUrl = this.getAppUrl();
 
-    const htmlContent = this.getOTPTemplate(
+    const { html, text } = await renderOtpEmail({
       name,
       appName,
       otp,
       ipAddress,
-      timestamp,
+      formattedDate: this.formatTimestamp(timestamp),
       appUrl,
-    );
+      logoUrl: this.getLogoUrl(),
+    });
 
-    await this.sendEmail({
+    const result = await this.sendEmail({
       appName,
       to: email,
-      subject: 'Votre code OTP de connexion',
-      html: htmlContent,
-      text: this.getOTPText(name, appName, otp, ipAddress, timestamp, appUrl),
+      subject: `Votre code de connexion ${appName}`,
+      html,
+      text,
+      category: 'transactional',
+      idempotencyKey: `otp-${otpId}`,
+      tags: [{ name: 'category', value: 'transactional' }],
     });
+
+    if (result === 'suppressed') {
+      throw new Error(
+        "Impossible d'envoyer l'OTP : cette adresse email est bloquée (bounce/plainte).",
+      );
+    }
   }
 
   async sendInactivityReminder(
@@ -189,340 +506,33 @@ export class EmailService {
     name: string,
     inactivityDays: number,
   ): Promise<void> {
-    const appName = this.configService.get<string>('APP_NAME', 'EXETATEST');
-    const appUrl = this.configService.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:5173',
-    );
+    const appName = this.getAppName();
+    const appUrl = this.getAppUrl();
+    const unsubscribeUrl = this.buildUnsubscribeUrl(email);
 
-    const htmlContent = this.getInactivityReminderTemplate(
+    const { html, text } = await renderInactivityReminderEmail({
       name,
       inactivityDays,
       appName,
       appUrl,
-    );
+      logoUrl: this.getLogoUrl(),
+      unsubscribeUrl,
+    });
 
     await this.sendEmail({
       appName,
       to: email,
       subject: `On vous attend sur ${appName}`,
-      html: htmlContent,
-      text: this.getInactivityReminderText(
-        name,
-        inactivityDays,
-        appName,
-        appUrl,
-      ),
+      html,
+      text,
+      category: 'marketing',
+      idempotencyKey: `inactivity-${email}-${inactivityDays}`,
+      tags: [{ name: 'category', value: 'marketing' }],
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
-  }
-
-  private formatTimestamp(timestamp: Date): string {
-    return timestamp.toISOString().replace('T', ' ').substring(0, 19);
-  }
-
-  private getInactivityReminderText(
-    name: string,
-    inactivityDays: number,
-    appName: string,
-    appUrl: string,
-  ): string {
-    return `Bonjour ${name},
-
-Ca fait ${inactivityDays} jours qu'on ne vous a pas vu(e) sur ${appName}.
-
-Une petite seance aujourd'hui peut relancer votre progression :
-${appUrl}
-
-Si vous n'avez plus acces a ce compte, ignorez simplement cet email.
-
-A tres vite !`;
-  }
-
-  private getInactivityReminderTemplate(
-    name: string,
-    inactivityDays: number,
-    appName: string,
-    appUrl: string,
-  ): string {
-    return `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>On vous attend sur ${appName}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: #F9F9FF; color: #191C20;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F9F9FF; font-family: 'Google Sans', Roboto, Arial, sans-serif;">
-    <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #FFFFFF; border: 1px solid #E0E2EC; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 12px rgba(65, 95, 145, 0.05);">
-          <tr>
-            <td style="padding: 32px 32px 16px 32px; text-align: center;">
-              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px auto; background-color: #D6E3FF; border-radius: 50%; width: 64px; height: 64px; text-align: center;">
-                <tr>
-                  <td align="center" valign="middle" style="height: 64px; width: 64px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#284777" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
-                  </td>
-                </tr>
-              </table>
-              <div style="font-size: 20px; font-weight: 700; color: #415F91; letter-spacing: -0.5px; margin-top: 8px;">${appName}</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 32px 32px 32px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #191C20; margin: 0 0 20px 0; line-height: 1.3; text-align: center;">On vous attend sur ${appName}</h1>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 16px 0;">Bonjour ${name},</p>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 24px 0;">
-                Ça fait <strong>${inactivityDays} jours</strong> qu’on ne vous a pas vu(e). Une petite séance aujourd’hui peut relancer votre progression.
-              </p>
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${appUrl}" style="display: inline-block; background-color: #415F91; color: #FFFFFF; text-decoration: none; padding: 12px 32px; border-radius: 100px; font-weight: 700; font-size: 15px; letter-spacing: 0.25px;">Reprendre l’entraînement</a>
-              </div>
-              <p style="font-size: 13px; color: #74777F; line-height: 1.6; margin: 24px 0 0 0; font-style: italic;">
-                Si vous n’avez plus accès à ce compte, ignorez simplement cet email. Ceci est un message automatique.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px; text-align: center; border-top: 1px solid #E0E2EC; background-color: #F3F3FA;">
-              <p style="font-size: 14px; font-weight: 700; color: #415F91; margin: 0;">À très vite !</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `;
-  }
-
-  private getOTPTemplate(
-    name: string,
-    appName: string,
-    otp: string,
-    ipAddress: string,
-    timestamp: Date,
-    appUrl: string,
-  ): string {
-    const formattedDate = this.formatTimestamp(timestamp);
-
-    return `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Votre code OTP</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: #F9F9FF; color: #191C20;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F9F9FF; font-family: 'Google Sans', Roboto, Arial, sans-serif;">
-    <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #FFFFFF; border: 1px solid #E0E2EC; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 12px rgba(65, 95, 145, 0.05);">
-          <tr>
-            <td style="padding: 32px 32px 16px 32px; text-align: center;">
-              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px auto; background-color: #D6E3FF; border-radius: 50%; width: 64px; height: 64px; text-align: center;">
-                <tr>
-                  <td align="center" valign="middle" style="height: 64px; width: 64px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#284777" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-                      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                    </svg>
-                  </td>
-                </tr>
-              </table>
-              <div style="font-size: 20px; font-weight: 700; color: #415F91; letter-spacing: -0.5px; margin-top: 8px;">${appName}</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 32px 32px 32px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #191C20; margin: 0 0 20px 0; line-height: 1.3; text-align: center;">Votre code de connexion</h1>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 16px 0;">Bonjour ${name},</p>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 24px 0;">
-                Vous avez demandé à vous connecter à votre compte <strong>${appName}</strong>. Utilisez le code ci-dessous pour finaliser votre connexion.
-              </p>
-              
-              <div style="background-color: #D6E3FF; border-radius: 16px; padding: 24px 20px; margin: 28px 0; text-align: center;">
-                <div style="font-size: 13px; color: #284777; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Votre code OTP</div>
-                <div style="font-size: 40px; font-weight: 700; color: #284777; letter-spacing: 8px; font-family: 'Courier New', Courier, monospace;">${otp}</div>
-              </div>
-
-              <div style="background-color: #F3F3FA; border-radius: 16px; padding: 18px; margin: 24px 0;">
-                <div style="font-size: 14px; color: #44474E; line-height: 1.5; margin: 4px 0;">
-                  <span style="font-weight: 700; color: #191C20;">Date :</span> ${formattedDate} (UTC)
-                </div>
-                <div style="font-size: 14px; color: #44474E; line-height: 1.5; margin: 4px 0;">
-                  <span style="font-weight: 700; color: #191C20;">Adresse IP :</span> ${ipAddress}
-                </div>
-              </div>
-
-              <div style="background-color: #FFDAD6; border-radius: 16px; padding: 16px; margin: 24px 0; font-size: 14px; color: #93000A; line-height: 1.5; font-weight: 500;">
-                ⚠️ Ce code expire dans 10 minutes. Ne le partagez avec personne.
-              </div>
-
-              <p style="font-size: 14px; line-height: 1.6; color: #44474E; margin: 24px 0 0 0;">
-                Si vous n'êtes pas à l'origine de cette demande, ignorez cet email ou
-                <a href="${appUrl}/support" style="color: #415F91; text-decoration: none; font-weight: 700;">contactez le support</a> en cas de doute.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px; text-align: center; border-top: 1px solid #E0E2EC; background-color: #F3F3FA;">
-              <p style="font-size: 14px; font-weight: 700; color: #415F91; margin: 0;">Restez connecté(e) !</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `;
-  }
-
-  private getOTPText(
-    name: string,
-    appName: string,
-    otp: string,
-    ipAddress: string,
-    timestamp: Date,
-    appUrl: string,
-  ): string {
-    const formattedDate = this.formatTimestamp(timestamp);
-
-    return `Bonjour ${name},
-
-Vous avez demande a vous connecter a votre compte ${appName}.
-
-Votre code OTP : ${otp}
-
-Ce code expire dans 10 minutes. Ne le partagez avec personne.
-
-Date : ${formattedDate} (UTC)
-Adresse IP : ${ipAddress}
-
-Si vous n'etes pas a l'origine de cette demande, ignorez cet email ou contactez le support :
-${appUrl}/support`;
-  }
-
-  private getLoginNotificationTemplate(
-    name: string,
-    email: string,
-    appName: string,
-    ipAddress: string,
-    timestamp: Date,
-    appUrl: string,
-  ): string {
-    const formattedDate = this.formatTimestamp(timestamp) + ' (UTC)';
-
-    return `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notification de connexion</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: #F9F9FF; color: #191C20;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F9F9FF; font-family: 'Google Sans', Roboto, Arial, sans-serif;">
-    <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #FFFFFF; border: 1px solid #E0E2EC; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 12px rgba(65, 95, 145, 0.05);">
-          <tr>
-            <td style="padding: 32px 32px 16px 32px; text-align: center;">
-              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px auto; background-color: #FFDAD6; border-radius: 50%; width: 64px; height: 64px; text-align: center;">
-                <tr>
-                  <td align="center" valign="middle" style="height: 64px; width: 64px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#BA1A1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                  </td>
-                </tr>
-              </table>
-              <div style="font-size: 20px; font-weight: 700; color: #415F91; letter-spacing: -0.5px; margin-top: 8px;">${appName}</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 32px 32px 32px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #191C20; margin: 0 0 20px 0; line-height: 1.3; text-align: center;">Nouvelle connexion détectée</h1>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 16px 0;">Bonjour ${name},</p>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 24px 0;">
-                Nous avons détecté une connexion à votre compte <span style="font-weight: 700; color: #415F91;">${appName}</span>
-                (<a href="mailto:${email}" style="color: #415F91; text-decoration: none;">${email}</a>) depuis une nouvelle adresse IP.
-              </p>
-              
-              <div style="background-color: #F3F3FA; border-radius: 16px; padding: 18px; margin: 24px 0;">
-                <div style="font-size: 14px; color: #44474E; line-height: 1.5; margin: 4px 0;">
-                  <span style="font-weight: 700; color: #191C20;">Date :</span> ${formattedDate}
-                </div>
-                <div style="font-size: 14px; color: #44474E; line-height: 1.5; margin: 4px 0;">
-                  <span style="font-weight: 700; color: #191C20;">Adresse IP :</span> ${ipAddress}
-                </div>
-              </div>
-
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${appUrl}" style="display: inline-block; background-color: #415F91; color: #FFFFFF; text-decoration: none; padding: 12px 32px; border-radius: 100px; font-weight: 700; font-size: 15px; letter-spacing: 0.25px;">Accéder à votre compte</a>
-              </div>
-
-              <p style="font-size: 14px; line-height: 1.6; color: #44474E; margin: 24px 0 0 0;">
-                Vous ne reconnaissez pas cette activité ?
-                <a href="${appUrl}/reset-password" style="color: #415F91; text-decoration: none; font-weight: 700;">Réinitialisez votre mot de passe</a> et contactez
-                <a href="${appUrl}/support" style="color: #415F91; text-decoration: none; font-weight: 700;">le support</a> immédiatement.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px; text-align: center; border-top: 1px solid #E0E2EC; background-color: #F3F3FA;">
-              <p style="font-size: 14px; font-weight: 700; color: #415F91; margin: 0 0 12px 0;">Restez connecté(e) !</p>
-              <div style="margin-top: 15px; margin-bottom: 15px;">
-                <a href="#" style="display: inline-block; margin: 0 8px; color: #44474E; text-decoration: none; font-size: 14px; font-weight: 500;">𝕏 (Twitter)</a>
-                <a href="#" style="display: inline-block; margin: 0 8px; color: #44474E; text-decoration: none; font-size: 14px; font-weight: 500;">Telegram</a>
-                <a href="#" style="display: inline-block; margin: 0 8px; color: #44474E; text-decoration: none; font-size: 14px; font-weight: 500;">Facebook</a>
-                <a href="#" style="display: inline-block; margin: 0 8px; color: #44474E; text-decoration: none; font-size: 14px; font-weight: 500;">LinkedIn</a>
-              </div>
-              <p style="font-size: 12px; color: #44474E; margin: 0;">
-                Ceci est un message automatique, merci de ne pas répondre.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `;
-  }
-
-  private getLoginNotificationText(
-    name: string,
-    email: string,
-    appName: string,
-    ipAddress: string,
-    timestamp: Date,
-    appUrl: string,
-  ): string {
-    const formattedDate = this.formatTimestamp(timestamp) + ' (UTC)';
-
-    return `Bonjour ${name},
-
-Nous avons detecte une connexion a votre compte ${appName} (${email}) depuis une nouvelle adresse IP.
-
-Date : ${formattedDate}
-Adresse IP : ${ipAddress}
-
-Acceder a votre compte :
-${appUrl}
-
-Vous ne reconnaissez pas cette activite ? Reinitialisez votre mot de passe et contactez le support immediatement :
-${appUrl}/reset-password
-${appUrl}/support`;
   }
 
   async sendSetInvitation(
@@ -530,129 +540,112 @@ ${appUrl}/support`;
     inviterName: string,
     setTitle: string,
   ): Promise<void> {
-    const appName = this.configService.get<string>(
-      'APP_NAME',
-      'EXETAT Mastery',
-    );
-    const appUrl = this.configService.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:5173',
-    );
+    const appName = this.getAppName();
+    const appUrl = this.getAppUrl();
 
-    const htmlContent = this.getSetInvitationTemplate(
+    const { html, text } = await renderSetInvitationEmail({
       inviterName,
       setTitle,
       appName,
       appUrl,
-    );
+      logoUrl: this.getLogoUrl(),
+    });
 
     await this.sendEmail({
       appName,
       to: email,
       subject: `Invitation : rejoindre « ${setTitle} » sur ${appName}`,
-      html: htmlContent,
-      text: this.getSetInvitationText(inviterName, setTitle, appName, appUrl),
+      html,
+      text,
+      category: 'transactional',
+      idempotencyKey: `invite-${email}-${setTitle.slice(0, 40)}`,
+      tags: [{ name: 'category', value: 'transactional' }],
     });
   }
 
-  private getSetInvitationText(
-    inviterName: string,
-    setTitle: string,
-    appName: string,
-    appUrl: string,
-  ): string {
-    return `Bonjour,
+  private extractRecipientEmails(data: ResendWebhookPayload['data']): string[] {
+    if (!data) {
+      return [];
+    }
 
-${inviterName} vous a invite(e) a rejoindre un ensemble de quiz sur ${appName}.
+    const to = data.to;
+    if (Array.isArray(to)) {
+      return to.map((value) => value.trim().toLowerCase()).filter(Boolean);
+    }
+    if (typeof to === 'string') {
+      return [to.trim().toLowerCase()];
+    }
 
-Ensemble de quiz : "${setTitle}"
-
-Voir l'invitation :
-${appUrl}/invitations
-
-Vous n'avez pas encore de compte ? Inscrivez-vous pour commencer :
-${appUrl}/signup`;
+    return [];
   }
 
-  private getSetInvitationTemplate(
-    inviterName: string,
-    setTitle: string,
-    appName: string,
-    appUrl: string,
-  ): string {
-    return `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invitation au quiz</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif; background-color: #F9F9FF; color: #191C20;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F9F9FF; font-family: 'Google Sans', Roboto, Arial, sans-serif;">
-    <tr>
-      <td align="center" style="padding: 40px 16px;">
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #FFFFFF; border: 1px solid #E0E2EC; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 12px rgba(65, 95, 145, 0.05);">
-          <tr>
-            <td style="padding: 32px 32px 16px 32px; text-align: center;">
-              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px auto; background-color: #D6E3FF; border-radius: 50%; width: 64px; height: 64px; text-align: center;">
-                <tr>
-                  <td align="center" valign="middle" style="height: 64px; width: 64px; vertical-align: middle;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#284777" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="8.5" cy="7" r="4"/>
-                      <line x1="20" y1="8" x2="20" y2="14"/>
-                      <line x1="17" y1="11" x2="23" y2="11"/>
-                    </svg>
-                  </td>
-                </tr>
-              </table>
-              <div style="font-size: 20px; font-weight: 700; color: #415F91; letter-spacing: -0.5px; margin-top: 8px;">${appName}</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 16px 32px 32px 32px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #191C20; margin: 0 0 20px 0; line-height: 1.3; text-align: center;">Vous êtes invité(e) !</h1>
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 0 0 16px 0;">
-                <span style="font-weight: 700; color: #415F91;">${inviterName}</span> vous a invité(e) à rejoindre un ensemble de quiz sur <strong>${appName}</strong>.
-              </p>
-              
-              <div style="background-color: #D6E3FF; border-radius: 16px; padding: 20px; margin: 24px 0; text-align: center;">
-                <div style="font-size: 13px; color: #284777; margin-bottom: 8px; font-weight: 700; text-transform: uppercase;">Ensemble de quiz</div>
-                <div style="font-size: 18px; font-weight: 700; color: #284777; margin: 10px 0;">&laquo; ${setTitle} &raquo;</div>
-                <div style="font-size: 13px; color: #284777; margin-top: 10px;">
-                  Entraînez-vous et progressez ensemble !
-                </div>
-              </div>
+  async handleResendWebhook(
+    rawBody: Buffer | string,
+    headers: Record<string, string | string[] | undefined>,
+  ): Promise<{ received: true }> {
+    const secret = this.configService.get<string>('RESEND_WEBHOOK_SECRET');
+    if (!secret) {
+      throw new BadRequestException('RESEND_WEBHOOK_SECRET non configuré');
+    }
 
-              <p style="font-size: 15px; line-height: 1.6; color: #191C20; margin: 16px 0;">
-                Cliquez sur le bouton ci-dessous pour voir et accepter l'invitation :
-              </p>
+    const svixId = headers['svix-id'];
+    const svixTimestamp = headers['svix-timestamp'];
+    const svixSignature = headers['svix-signature'];
 
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${appUrl}/invitations" style="display: inline-block; background-color: #415F91; color: #FFFFFF; text-decoration: none; padding: 12px 32px; border-radius: 100px; font-weight: 700; font-size: 15px; letter-spacing: 0.25px;">Voir l'invitation</a>
-              </div>
+    if (
+      typeof svixId !== 'string' ||
+      typeof svixTimestamp !== 'string' ||
+      typeof svixSignature !== 'string'
+    ) {
+      throw new UnauthorizedException('En-têtes webhook Svix manquants');
+    }
 
-              <p style="font-size: 14px; line-height: 1.6; color: #44474E; margin: 24px 0 0 0;">
-                Vous n'avez pas encore de compte ? Pas de souci !
-                <a href="${appUrl}/signup" style="color: #415F91; text-decoration: none; font-weight: 700;">Inscrivez-vous</a> pour commencer.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px; text-align: center; border-top: 1px solid #E0E2EC; background-color: #F3F3FA;">
-              <p style="font-size: 14px; font-weight: 700; color: #415F91; margin: 0 0 4px 0;">${appName} · Apprendre ensemble</p>
-              <p style="font-size: 12px; color: #44474E; margin: 0;">
-                Ceci est un message automatique, merci de ne pas répondre.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `;
+    const wh = new Webhook(secret);
+    const payloadString =
+      typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
+
+    let payload: ResendWebhookPayload;
+    try {
+      payload = wh.verify(payloadString, {
+        'svix-id': svixId,
+        'svix-timestamp': svixTimestamp,
+        'svix-signature': svixSignature,
+      }) as ResendWebhookPayload;
+    } catch {
+      throw new UnauthorizedException('Signature webhook invalide');
+    }
+
+    const eventId = svixId;
+    const eventType = payload.type ?? 'unknown';
+
+    const alreadyProcessed = await this.webhookEventModel.findOne({
+      where: { eventId },
+    });
+    if (alreadyProcessed) {
+      return { received: true };
+    }
+
+    const recipients = this.extractRecipientEmails(payload.data);
+
+    if (eventType === 'email.bounced') {
+      for (const email of recipients) {
+        await this.suppressEmail(email, EmailSuppressionReason.HARD_BOUNCE);
+      }
+    } else if (eventType === 'email.complained') {
+      for (const email of recipients) {
+        await this.suppressEmail(email, EmailSuppressionReason.COMPLAINT);
+      }
+    } else if (eventType === 'email.delivery_delayed') {
+      for (const email of recipients) {
+        await this.suppressEmail(email, EmailSuppressionReason.SOFT_BOUNCE);
+      }
+    }
+
+    await this.webhookEventModel.create({
+      eventId,
+      eventType,
+    });
+
+    return { received: true };
   }
 }
