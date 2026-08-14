@@ -78,6 +78,22 @@ export class AuthService {
     return randomInt(100000, 1000000).toString();
   }
 
+  private isAppStoreReviewer(email: string): boolean {
+    const reviewerEmail = this.configService
+      .get<string>('APP_STORE_REVIEWER_EMAIL')
+      ?.trim()
+      .toLowerCase();
+
+    return Boolean(reviewerEmail && email === reviewerEmail);
+  }
+
+  private isValidAppStoreReviewerOtp(otp: string): boolean {
+    return (
+      otp.trim() ===
+      this.configService.get<string>('APP_STORE_REVIEWER_OTP')?.trim()
+    );
+  }
+
   async login(
     user: User,
     ipAddress: string = '0.0.0.0',
@@ -159,6 +175,17 @@ export class AuthService {
 
     if (!user) {
       user = await this.usersService.createUser(normalizedEmail);
+    }
+
+    // The fixed reviewer OTP is verified without sending an email or creating
+    // an OTP row, so app-store reviews do not consume email quota.
+    if (this.isAppStoreReviewer(normalizedEmail)) {
+      return {
+        data: {
+          expiresInSeconds: AuthService.OTP_TTL_MINUTES * 60,
+        },
+        message: 'OTP envoyÃ© avec succÃ¨s',
+      };
     }
 
     const recentOtpRequests = await this.otpModel.count({
@@ -246,6 +273,16 @@ export class AuthService {
 
     if (!otp || typeof otp !== 'string') {
       throw new UnauthorizedException(AuthService.INVALID_OTP_MESSAGE);
+    }
+
+    if (
+      this.isAppStoreReviewer(normalizedEmail) &&
+      this.isValidAppStoreReviewerOtp(otp)
+    ) {
+      return this.login(user, ipAddress, {
+        notifyLoginEmail: true,
+        timezoneOffsetMinutes,
+      });
     }
 
     const now = new Date();

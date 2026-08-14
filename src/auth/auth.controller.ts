@@ -49,7 +49,11 @@ export class AuthController {
 
   @Post('otp/verify')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Vérifier le code OTP et se connecter' })
+  @ApiOperation({
+    summary: 'Vérifier le code OTP et se connecter',
+    description:
+      "Le compte d'évaluation App Store configuré peut utiliser son code OTP fixe.",
+  })
   @ApiHeader({
     name: 'X-Timezone-Offset-Minutes',
     required: false,
