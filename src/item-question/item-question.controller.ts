@@ -59,7 +59,7 @@ export class ItemQuestionController {
   @ApiOperation({
     summary: 'List item questions',
     description:
-      'Returns paginated questions. Optional filter: item_course_id.',
+      'Returns paginated quiz questions with options randomized per response. Optional filter: item_course_id.',
   })
   @ApiOkResponse({
     description: 'Item questions returned successfully',
@@ -82,7 +82,11 @@ export class ItemQuestionController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get one item question by id' })
+  @ApiOperation({
+    summary: 'Get one item question by id',
+    description:
+      'Returns a quiz question with options randomized and answer remapped to the new 0-based index.',
+  })
   @ApiOkResponse({
     description: 'Item question returned successfully',
     type: ItemQuestionResponseDto,

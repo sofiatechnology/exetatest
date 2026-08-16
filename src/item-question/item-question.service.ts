@@ -34,6 +34,36 @@ export class ItemQuestionService {
     };
   }
 
+  /**
+   * Returns a quiz-ready copy of a question with its choices shuffled.
+   * The original option index travels with each choice, so the correct answer
+   * remains accurate even when two choices have the same text.
+   */
+  private toShuffledResponse(
+    itemQuestion: ItemQuestion,
+  ): ItemQuestionResponseDto {
+    const shuffledOptions = itemQuestion.options.map((option, index) => ({
+      option,
+      originalIndex: index,
+    }));
+
+    for (let index = shuffledOptions.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffledOptions[index], shuffledOptions[randomIndex]] = [
+        shuffledOptions[randomIndex],
+        shuffledOptions[index],
+      ];
+    }
+
+    return {
+      ...this.toResponse(itemQuestion),
+      options: shuffledOptions.map(({ option }) => option),
+      answer: shuffledOptions.findIndex(
+        ({ originalIndex }) => originalIndex === itemQuestion.answer,
+      ),
+    };
+  }
+
   private normalizeQuestion(question: string): string {
     const trimmed = question.trim();
     if (!trimmed) {
@@ -123,7 +153,7 @@ export class ItemQuestionService {
       await this.itemQuestionModel.findAndCountAll(options);
 
     return {
-      data: rows.map((itemQuestion) => this.toResponse(itemQuestion)),
+      data: rows.map((itemQuestion) => this.toShuffledResponse(itemQuestion)),
       total: count,
       page,
       limit,
@@ -132,7 +162,7 @@ export class ItemQuestionService {
 
   async findOne(id: string): Promise<ItemQuestionResponseDto> {
     const itemQuestion = await this.getItemQuestionOrFail(id);
-    return this.toResponse(itemQuestion);
+    return this.toShuffledResponse(itemQuestion);
   }
 
   async update(

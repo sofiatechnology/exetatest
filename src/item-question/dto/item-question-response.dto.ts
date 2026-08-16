@@ -10,12 +10,17 @@ export class ItemQuestionResponseDto {
   @ApiProperty({ example: 'b2c3d4e5-f6a7-8901-bcde-f12345678901' })
   item_course_id: string;
 
-  @ApiProperty({ example: ['bukavu', 'goma'], type: [String] })
+  @ApiProperty({
+    example: ['goma', 'bukavu'],
+    type: [String],
+    description: 'Choices. Quiz read endpoints return these in random order.',
+  })
   options: string[];
 
   @ApiProperty({
-    example: 1,
-    description: 'Index of the correct option in options (0-based)',
+    example: 0,
+    description:
+      '0-based index of the correct option in the returned options array. It is remapped when options are shuffled.',
   })
   answer: number;
 
