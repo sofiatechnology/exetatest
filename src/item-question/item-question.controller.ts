@@ -30,14 +30,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRoleEnum } from '../models/user.model';
 
 @ApiTags('item-questions')
-@ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
 @Controller('item-questions')
 export class ItemQuestionController {
   constructor(private readonly itemQuestionService: ItemQuestionService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Create an item question (admin only)',
@@ -59,7 +58,7 @@ export class ItemQuestionController {
   @ApiOperation({
     summary: 'List item questions',
     description:
-      'Returns paginated quiz questions with options randomized per response. Optional filter: item_course_id.',
+      'Public. Returns paginated quiz questions with options randomized per response. Optional filter: item_course_id.',
   })
   @ApiOkResponse({
     description: 'Item questions returned successfully',
@@ -76,7 +75,6 @@ export class ItemQuestionController {
       },
     },
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: ItemQuestionQueryDto) {
     return this.itemQuestionService.findAll(query);
   }
@@ -85,19 +83,19 @@ export class ItemQuestionController {
   @ApiOperation({
     summary: 'Get one item question by id',
     description:
-      'Returns a quiz question with options randomized and answer remapped to the new 0-based index.',
+      'Public. Returns a quiz question with options randomized and answer remapped to the new 0-based index.',
   })
   @ApiOkResponse({
     description: 'Item question returned successfully',
     type: ItemQuestionResponseDto,
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.itemQuestionService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Update an item question (admin only)',

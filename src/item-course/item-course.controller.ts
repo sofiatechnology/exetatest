@@ -30,14 +30,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRoleEnum } from '../models/user.model';
 
 @ApiTags('item-courses')
-@ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
 @Controller('item-courses')
 export class ItemCourseController {
   constructor(private readonly itemCourseService: ItemCourseService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Create an item course (admin only)',
@@ -59,7 +58,7 @@ export class ItemCourseController {
   @ApiOperation({
     summary: 'List item courses',
     description:
-      'Returns paginated course blocks. Optional filters: item_id, course.',
+      'Public. Returns paginated course blocks without login. Optional filters: item_id, course.',
   })
   @ApiOkResponse({
     description: 'Item courses returned successfully',
@@ -76,24 +75,26 @@ export class ItemCourseController {
       },
     },
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: ItemCourseQueryDto) {
     return this.itemCourseService.findAll(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get one item course by id' })
+  @ApiOperation({
+    summary: 'Get one item course by id',
+    description: 'Public. Returns a course block without login.',
+  })
   @ApiOkResponse({
     description: 'Item course returned successfully',
     type: ItemCourseResponseDto,
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.itemCourseService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Update an item course (admin only)',

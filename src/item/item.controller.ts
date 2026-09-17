@@ -31,14 +31,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRoleEnum } from '../models/user.model';
 
 @ApiTags('items')
-@ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
 @Controller('items')
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Create an item (admin only)',
@@ -60,7 +59,7 @@ export class ItemController {
   @ApiOperation({
     summary: 'List items',
     description:
-      'Returns paginated quiz items. Optional filters: type, section_id, year, universal.',
+      'Public. Returns paginated quiz items without login. Optional filters: type, section_id, year, universal.',
   })
   @ApiOkResponse({
     description: 'Items returned successfully',
@@ -77,7 +76,6 @@ export class ItemController {
       },
     },
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: ItemQueryDto) {
     return this.itemService.findAll(query);
   }
@@ -88,13 +86,12 @@ export class ItemController {
   @ApiOperation({
     summary: 'Get random item',
     description:
-      'Returns a random quiz item based on type and section_id filters.',
+      'Public. Returns a random quiz item based on type and section_id filters.',
   })
   @ApiOkResponse({
     description: 'Random item returned successfully',
     type: ItemResponseDto,
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findRandom(@Query() query: ItemQueryDto) {
     return this.itemService.findRandom(query);
   }
@@ -103,7 +100,7 @@ export class ItemController {
   @ApiOperation({
     summary: 'Get random item for each type',
     description:
-      'Returns one random item for each type (sc, la, cg, co) in the requested section.',
+      'Public. Returns one random item for each type (sc, la, cg, co) in the requested section.',
   })
   @ApiOkResponse({
     description: 'Random items returned successfully',
@@ -150,7 +147,6 @@ export class ItemController {
       ],
     },
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findRandomStats(@Query() query: RandomItemStatsQueryDto) {
     return this.itemService.findRandomStats(query);
   }
@@ -158,18 +154,21 @@ export class ItemController {
   // Item by id
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get one item by id' })
+  @ApiOperation({
+    summary: 'Get one item by id',
+    description: 'Public. Returns a quiz item without login.',
+  })
   @ApiOkResponse({
     description: 'Item returned successfully',
     type: ItemResponseDto,
   })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.itemService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiOperation({
     summary: 'Update an item (admin only)',
