@@ -30,12 +30,6 @@
     "grant:admin": "ts-node -r tsconfig-paths/register scripts/grant-admin.ts",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
-    "seed:items": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seeds/seed-items.ts",
-    "seed:courses": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seeds/seed-item-courses.ts",
-    "seed:lookup": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seeds/seed-lookup-questions.ts",
-    "lookup:collect": "python3 scripts/lookup/collect.py",
-    "seed:cleanup": "npx ts-node --transpile-only --project tsconfig.json -r tsconfig-paths/register src/database/seeds/clean-db.ts",
-    "seed:all": "npm run seed:items && npm run seed:courses && npm run seed:lookup",
     "email": "email dev --dir src/email/templates --port 3001"
   },
   "dependencies": {
