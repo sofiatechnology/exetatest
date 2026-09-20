@@ -31,7 +31,7 @@ export class ItemQuestion extends Model<
   declare id: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
   })
   declare question: string;
@@ -47,7 +47,7 @@ export class ItemQuestion extends Model<
   declare itemCourse: ItemCourse;
 
   @Column({
-    type: DataType.ARRAY(DataType.STRING),
+    type: DataType.ARRAY(DataType.TEXT),
     allowNull: false,
   })
   declare options: string[];

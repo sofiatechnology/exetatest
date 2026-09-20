@@ -1,0 +1,234 @@
+{
+  "section_id": "02",
+  "year": 2016,
+  "type": "cg",
+  "source": "dump:2016-cg",
+  "courses": [
+    {
+      "course": "Culture générale",
+      "passage": null,
+      "questions": [
+        {
+          "question": "Indiquez la proposition (III) où les leaders (I) sont associés correctement à leurs partis politiques respectifs (I) :",
+          "options": [
+            "A5, B1, C4, D3, E2",
+            "A4, B2, C3, D5, E4",
+            "A1, B3, C2, D4, E5",
+            "A2, B4, C5, D1, E3",
+            "A3, B5, C4, D2, E1"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "La dénomination coloniale de la ville de Mbanza-Ngungu est :",
+          "options": [
+            "Thysville.",
+            "Elisabethville.",
+            "Costermansville.",
+            "Coquilhatville.",
+            "Albertville."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le point extrême nord de l’Afrique est le cap :",
+          "options": [
+            "Bon.",
+            "Des Aiguilles.",
+            "Des Trois Pointes.",
+            "Guardafui.",
+            "Vert."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Sur cette carte muette de la R.D.C., les chiffres représentent quelques gisements miniers.",
+          "options": [
+            "du diamant.",
+            "du cuivre.",
+            "du charbon.",
+            "de l’or.",
+            "de l’étain."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "L’économie Congolaise se caractérise par le fait que les centres de décisions sont situés dans les Pays du Nord. Une telle économie est dite aussi :",
+          "options": [
+            "Désarticulée.",
+            "Du type agricole.",
+            "Dualiste.",
+            "Périphérique.",
+            "Peu dynamique."
+          ],
+          "answer": 3
+        },
+        {
+          "question": "Indiquez l’atout naturel de la RDC qui imprime au paysage des possibilités d’installation énergétique.",
+          "options": [
+            "Sols.",
+            "Relief.",
+            "Cours d’eau.",
+            "Biodiversité.",
+            "Bassin hydrographique."
+          ],
+          "answer": 2
+        },
+        {
+          "question": "L’organe de l’Union Européenne qui définit les orientations de politique générale et arbitre des conflits est :",
+          "options": [
+            "La commission européenne.",
+            "La cour de justice européenne.",
+            "Le conseil des ministres.",
+            "Le conseil européen.",
+            "Le parlement européen."
+          ],
+          "answer": 3
+        },
+        {
+          "question": "Indiquez l’organisme de l’ONU qui s’occupe de l’éducation.",
+          "options": [
+            "UNICEF.",
+            "UNESCO.",
+            "ONASE.",
+            "PNUE.",
+            "FNUAP"
+          ],
+          "answer": 1
+        },
+        {
+          "question": "Indiquez le (s) fait (s) plus marquant (s) de la décolonisation du Congo-Belge, fait dans le sang et la douleur.",
+          "options": [
+            "La création de l’état autonome du sud-KasaÏ.",
+            "La mutinerie de la force publique.",
+            "La sécession katangaise et l’assassinat de P.E Lumumba.",
+            "Le coup de force du colonel Mobutu et l’installation du gouvernement des commissaires généraux.",
+            "Les rebellions du kwilu et des maÏ-maÏ à l’est."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "L’opération qui consiste à examiner l’identité d’un document c’est-à-dire l’époque, le milieu et les conditions de sa rédaction sans omettre la manière dont il nous est parvenu relevé de la critique :",
+          "options": [
+            "D’authenticité.",
+            "D’interprétation.",
+            "De provenance.",
+            "De restitution.",
+            "De sincérité."
+          ],
+          "answer": 2
+        },
+        {
+          "question": "La bataille de Dambarare marque un tournant décisif dans l’Etat précolonial Africain ci-après :",
+          "options": [
+            "Kongo.",
+            "Mali.",
+            "Monomotapa.",
+            "Songhaï",
+            "Sosso."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez le type d’homme préhistorique qui vivait en société, avait un langage articulé et connaissait le feu.",
+          "options": [
+            "Australopithèque.",
+            "Néanthropien.",
+            "Paléanthropien.",
+            "Pithécanthrope.",
+            "Zinjanthrope."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez la proposition(III)où les souverains(I)sont associés correctement et respectivement à leurs royaume ou empires(II):",
+          "options": [
+            "A2, B1, C4, D5, E3.",
+            "A5, B2, C1, D3, E4.",
+            "A3, B4, C5, D2, E1.",
+            "A1, B3, C2, D4, E5.",
+            "A4, B5, C3, D1, E2"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez la Science auxiliaire de l’histoire dont l’objet est l’étude des traces matérielles laissées par l’homme.",
+          "options": [
+            "La paléontologie.",
+            "La numismatique.",
+            "La dendrochronologie.",
+            "L’ethnologie.",
+            "L’archéologie."
+          ],
+          "answer": 4
+        },
+        {
+          "question": "« Aucun oiseau n’est intelligent ; or Nervie n’est pas oiseau ; donc Nervie n’est pas intelligent ». Ce syllogisme est incorrect parce que :",
+          "options": [
+            "La conclusion ne découle pas de prémisses.",
+            "Les prémisses sont négatives.",
+            "Les prémisses sont particulières.",
+            "Les termes ne gardent pas le même sens.",
+            "Les termes ont une grande extension dans la conclusion."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez les propositions qui illustrent la contrariété dans le carré logique.",
+          "options": [
+            "A et A.",
+            "O et I.",
+            "O et E.",
+            "I et E.",
+            "E et A."
+          ],
+          "answer": 4
+        },
+        {
+          "question": "Indiquez l’étape à laquelle intervient “l’exécution“ dans l’analyse de l’acte volontaire.",
+          "options": [
+            "Première.",
+            "Deuxième.",
+            "Troisième.",
+            "Quatrième.",
+            "Cinquième."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "« Il suffisait à l’homme de connaitre le bien à faire pour qu’on le fasse nécessairement ». Cet aphorisme socratique a exagéré :",
+          "options": [
+            "L’intelligence.",
+            "La maïeutique.",
+            "La vertu.",
+            "La volonté.",
+            "Le bonheur."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "La raison pour laquelle G. Marcel refuse d’accepter des scientistes est :",
+          "options": [
+            "L’égoïsme.",
+            "L’ignorance.",
+            "La liberté absolue.",
+            "Le monde-cassé.",
+            "Le pour-soi."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "L’apprentissage d’un instrument de musique fait appel aux habitudes :",
+          "options": [
+            "Mentales.",
+            "Motrices.",
+            "Normales.",
+            "Organiques.",
+            "Sociales."
+          ],
+          "answer": 1
+        }
+      ]
+    }
+  ]
+}

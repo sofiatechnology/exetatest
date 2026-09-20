@@ -1,0 +1,308 @@
+{
+  "section_id": "02",
+  "year": 2022,
+  "type": "sc",
+  "source": "https://www.schoolap.com/exetats/397/science/mathematique",
+  "courses": [
+    {
+      "course": "Mathematique",
+      "passage": null,
+      "questions": [
+        {
+          "question": "Les liens existant entre les divers acteurs d’un marché relève des rapports :",
+          "options": [
+            "Familiaux",
+            "Commerciaux",
+            "Conjugaux",
+            "Juridiques",
+            "Religieux"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le montant du capital à investir pour gagner un revenu annuel net de 3.000.000.00Fc avec coefficient du capital de 0.6 équivaut à :",
+          "options": [
+            "600.000.00Fc",
+            "900.000.00Fc",
+            "1.200.000.00Fc",
+            "1.500.000.00fc",
+            "1.800.000.00Fc"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Les données démographiques d’une nation se présente comme suit :",
+          "options": [
+            "1%",
+            "2%",
+            "3%",
+            "5%",
+            "7%"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "En 2021, Monsieur Rolain contracte un emprunt de 2.500.000.00fc auprès d’EQUITY BCDC remboursable à 9% l’an. A la suite d’une inflation, sa valeur acquise est évaluée à 2.180.000.00fc. le taux d’inflation appliqué par le banquier équivaut à :",
+          "options": [
+            "10%",
+            "15%",
+            "20%",
+            "25%",
+            "30%"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Une entité à KALEMIE vent à 80.000Fc ses prestations mensuelles en supportant annuellement des charges variables et fixes respectivement de 460.000 et 220.000. le point mort sera atteint à partir du mois de :",
+          "options": [
+            "Juin",
+            "Mai",
+            "Avril",
+            "Février",
+            "Mars"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le service de comptabilité de l’entité « DEUX FRERES » Sarl présente les données issues de mouvements de stock d’une période donnée : entrées marchandises 1.000.000, stock fin période, 100.000, stock moyen 150.000. la durée de rotation de stock équivaut à (en nombre de jours) :",
+          "options": [
+            "90",
+            "84",
+            "77",
+            "54",
+            "44"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le moyen d’organisation scientifique qui a pour but de déterminer les dimensions, qualités de matières et les procédés les meilleurs parmi ceux utilisés à une même fin industrielle est la :",
+          "options": [
+            "Division du travail",
+            "Modernisation",
+            "Normalisation",
+            "Préparation minutieuse du travail"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez le point de commande quand on sait que la consommation moyenne d’une matière pendant un semestre est de 9.000 unités et le délai de livraison de 20 jours.",
+          "options": [
+            "6000",
+            "4000",
+            "2500",
+            "2000",
+            "1000"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "La fonction qui a précisément pour rôle d’organiser les relations entre l’entité et le marché est dite fonction :",
+          "options": [
+            "D’approvisionnement",
+            "Administrative",
+            "Comptabilité",
+            "De distribution",
+            "Technique"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Soit la fonction f définie par f(x) = ax+b+ (a,b,c et d des réels) et (C) sa courbe représentative. \r\n \r\n\r\n La courbe (C) passe par le point P(0,-2) et admet les droites y + x + 2 = 0 et x- 1 = 0 pour asymptotes. \r\n\r\n L’expression a+b c+d égale :",
+          "options": [
+            "0",
+            "1"
+          ],
+          "answer": 0
+        }
+      ]
+    },
+    {
+      "course": "Sciences",
+      "passage": null,
+      "questions": [
+        {
+          "question": "1. Les Liens existant entre les membres d'un même regroupement à tendance héréditaire relève des rapports :",
+          "options": [
+            "1. familiaux.",
+            "2. commerciaux.",
+            "3. conjugaux.",
+            "4. juridiques.",
+            "5. religieux"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "2. Le montant du capital à investir pour gagner un revenu annuel net de 3.000.000,00 FC avec coefficient du capital de 0,3 équivaut à :",
+          "options": [
+            "1. 600.000,00 FC.",
+            "2. 900.000,00 FC",
+            "3.1.200.000,00 FC.",
+            "4. 1.500.000,00 FC",
+            "5. 1.800.000,00 FC"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "3. Les données démographiques d'une nation se présentent comme suit :\n\r\n- taux de natalité : 10%;\n\r\n- taux de mortalité 5% ;\n\r\n- taux d'immigration 7% et celui d'émigration 9%\n\r\nLe taux d'accroissement naturel s'élève à :",
+          "options": [
+            "1. 1%.",
+            "2. 2%.",
+            "3. 3%.",
+            "4. 5%.",
+            "5. 7%."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "4. La gratuité de l'enseignement primaire prônée par le gouvernement en République Démocratique du Congo vise à garantir à la jeunesse",
+          "options": [
+            "1. de l'eau potable.",
+            "2. une éducation de base.",
+            "3. un encadrement médical fondamental.",
+            "4. une nourriture équilibrée.",
+            "5. une participation aux responsabilités sociales."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "5. En 2021, Monsieur Rolain contracte un emprunt de 2.500.000,00 FC auprès d'Equity BCDC remboursable à 9% l'an.\n\r\nA la suite d'une inflation, sa valeur acquise est évaluée à 2.452.500,00 FC.\n\r\nLe taux d'inflation appliqué par le banquier équivaut à :",
+          "options": [
+            "1. 10%.",
+            "2.15%.",
+            "3. 20%.",
+            "4. 25%.",
+            "5. 30%."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "6. Une entité située à KALEMIE vend à 80.000 FC ses prestations mensuelles en supportant annuellement des charges variables et fixes respectivement de 460.000 et 150.000.\n\r\nLe point mort sera atteint à partir du mois de :",
+          "options": [
+            "1. juin.",
+            "2. mai.",
+            "3. avril.",
+            "4. février.",
+            "5, mars."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "7. Le service de comptabilité de l'entité \"Deux FRERES\" SARL présente les données issues de mouvements de stock d'une période donnée :\n\r\nentrées marchandises 500.000, stock fin période 100.000, stock moyen 150.000.\n\r\nLa durée de rotation de stock équivaut à (en nombre de jours) :",
+          "options": [
+            "1. 90.",
+            "2. 84.",
+            "3. 77.",
+            "4, 54",
+            "5. 49."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "8. Le moyen d'organisation scientifique qui assure la continuité des opérations et l'élimination des tâches inutiles est la :",
+          "options": [
+            "1. division du travail.",
+            "2. modernisation.",
+            "3. normalisation.",
+            "4. préparation minutieuse du travail.",
+            "5. spécialisation."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "9. Indiquez le point de commande quand on sait que la consommation moyenne d'une matière pendant un mois est de 9.000 unités et le délai de livraison de 20 jours.",
+          "options": [
+            "1. 6000.",
+            "2. 4000.",
+            "3. 2500",
+            "4. 2000.",
+            "5 1000."
+          ],
+          "answer": 0
+        },
+        {
+          "question": "10. La fonction dont la direction comme organe qui exerce le rôle du cerveau de l'entité est dite fonction :",
+          "options": [
+            "1. d'approvisionnement.",
+            "2. administrative.",
+            "3. comptabilité.",
+            "4. de distribution.",
+            "5, technique."
+          ],
+          "answer": 0
+        }
+      ]
+    },
+    {
+      "course": "Science s4",
+      "passage": null,
+      "questions": [
+        {
+          "question": "1. La figure ci-contre montre la structure du spermatozoide d'un mammifère. \r\n\r\n L'organe qui assure la production du flagelle est:",
+          "options": [
+            "1. a",
+            "2. c",
+            "3. d",
+            "4. e",
+            "5. f"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "2. Soient les organes ci-dessous des vertébrés: \r\n\r\n A. anus B. bouche C. coeur E. foie G. langue H. oeil I. oreille J. muscle K. pancréas M. peau N. poumons 0. reins. Les orga,nes produits par lendorme sont:",
+          "options": [
+            "1. A,B et M",
+            "2. E,K et N",
+            "3. G,H et I",
+            "4. C, L et 0",
+            "5. A, B et K"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "3. La couleur de la robe des cheveux montre une dominance incomplète. Les individus CC sont de couleur châtain; les CC ont une couleur dite palomino et les individus çç ont une couleur cremello. Le croisement qui donne châtin et palomino est:",
+          "options": [
+            "1. palomino x palomino",
+            "2. palomino x châtin",
+            "3. palomino x cremello",
+            "4. châtin x cremello",
+            "5. châtin x châtin"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "4. Indiquez la combinaison (III) qui associe correctement chaque organisme (I) à son mode de reproduction agame (II). \r\n\r\n I. \r\n\r\n A. Lombric \r\n\r\n B. Vrais jumeaux \r\n\r\n C. Hydrate d'eau douce \r\n\r\n D. Plasmodium \r\n\r\n II. \r\n\r\n 1. scissiparité \r\n\r\n 2. schizogonie \r\n\r\n 3. gemmiparité \r\n\r\n 4. régénérescence \r\n\r\n 5. polyembryonie",
+          "options": [
+            "1. A2, B4, C1, D3",
+            "2. A1, B3, C5,D2",
+            "3. A3, B2,C3, D5",
+            "4. A3, B2, C1, D4",
+            "5. A4, B5, C3, D2"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "5. L'apparition de la vie a eu lieu au:",
+          "options": [
+            "1. précambrien",
+            "2. primaire",
+            "3. quaternaire",
+            "4. secondaire",
+            "5. tertiaire"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "6. La relation ou u espèce doit vivre obligatoirement dans une autre est le:",
+          "options": [
+            "1. commensalisme",
+            "2. mutualisme",
+            "3. neutralisme",
+            "4. parasitisme",
+            "5. symbiotisme"
+          ],
+          "answer": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "section_id": "02",
+  "year": 2022,
+  "type": "co",
+  "source": "dump:2022-co",
+  "courses": [
+    {
+      "course": "Économie et gestion",
+      "passage": null,
+      "questions": [
+        {
+          "question": "Les liens existant entre les divers acteurs d’un marché relève des rapports :",
+          "options": [
+            "Familiaux",
+            "Commerciaux",
+            "Conjugaux",
+            "Juridiques",
+            "Religieux"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le montant du capital à investir pour gagner un revenu annuel net de 3.000.000.00Fc avec coefficient du capital de 0.6 équivaut à :",
+          "options": [
+            "600.000.00Fc",
+            "900.000.00Fc",
+            "1.200.000.00Fc",
+            "1.500.000.00fc",
+            "1.800.000.00Fc"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Les données démographiques d’une nation se présente comme suit :Taux de natalité : 8%Taux de mortalité : 5%Taux d’immigration 7% et celui d’émigration : 9%Le taux d’accroissement s’élève à :",
+          "options": [
+            "1%",
+            "2%",
+            "3%",
+            "5%",
+            "7%"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "En 2021, Monsieur Rolain contracte un emprunt de 2.500.000.00fc auprès d’EQUITY BCDC remboursable à 9% l’an. A la suite d’une inflation, sa valeur acquise est évaluée à 2.180.000.00fc. le taux d’inflation appliqué par le banquier équivaut à :",
+          "options": [
+            "10%",
+            "15%",
+            "20%",
+            "25%",
+            "30%"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Une entité à KALEMIE vent à 80.000Fc ses prestations mensuelles en supportant annuellement des charges variables et fixes respectivement de 460.000 et 220.000. le point mort sera atteint à partir du mois de :",
+          "options": [
+            "Juin",
+            "Mai",
+            "Avril",
+            "Février",
+            "Mars"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le service de comptabilité de l’entité « DEUX FRERES » Sarl présente les données issues de mouvements de stock d’une période donnée : entrées marchandises 1.000.000, stock fin période, 100.000, stock moyen 150.000. la durée de rotation de stock équivaut à (en nombre de jours) :",
+          "options": [
+            "90",
+            "84",
+            "77",
+            "54",
+            "44"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Le moyen d’organisation scientifique qui a pour but de déterminer les dimensions, qualités de matières et les procédés les meilleurs parmi ceux utilisés à une même fin industrielle est la :",
+          "options": [
+            "Division du travail",
+            "Modernisation",
+            "Normalisation",
+            "Préparation minutieuse du travail"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Indiquez le point de commande quand on sait que la consommation moyenne d’une matière pendant un semestre est de 9.000 unités et le délai de livraison de 20 jours.",
+          "options": [
+            "6000",
+            "4000",
+            "2500",
+            "2000",
+            "1000"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "La fonction qui a précisément pour rôle d’organiser les relations entre l’entité et le marché est dite fonction :",
+          "options": [
+            "D’approvisionnement",
+            "Administrative",
+            "Comptabilité",
+            "De distribution",
+            "Technique"
+          ],
+          "answer": 0
+        },
+        {
+          "question": "Soit la fonction f définie par f(x) = ax+b+(a,b,c et d des réels) et (C) sa courbe représentative.La courbe (C) passe par le point P(0,-2) et admet les droites y + x + 2 = 0 et x- 1 = 0 pour asymptotes.L’expressiona+bc+dégale :",
+          "options": [
+            "0",
+            "1"
+          ],
+          "answer": 0
+        }
+      ]
+    }
+  ]
+}
