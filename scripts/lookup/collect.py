@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Collect EXETAT questions from Schoolap URLs and local lookup dumps.
 
-Writes normalized JSON papers to scripts/lookup/collected/ for seed-lookup-questions.ts.
+Writes normalized JSON papers to src/database/seeds/lookup/collected/ for seed-lookup-questions.ts.
 """
 
 from __future__ import annotations
@@ -14,10 +14,10 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-COLLECTED_DIR = ROOT / "collected"
-SEEDS_SCIENTIFIQUE = (
-    ROOT.parent.parent / "src" / "database" / "seeds" / "scientifique"
-)
+REPO = ROOT.parent.parent
+SEEDS_DIR = REPO / "src" / "database" / "seeds"
+COLLECTED_DIR = SEEDS_DIR / "lookup" / "collected"
+SEEDS_SCIENTIFIQUE = SEEDS_DIR / "scientifique"
 SECTION_ID = "02"  # SCIENTIFIQUE
 
 FR_STEM = re.compile(
@@ -397,7 +397,7 @@ def load_langue_2015() -> dict | None:
         "section_id": SECTION_ID,
         "year": int(data.get("session") or 2015),
         "type": "la",
-        "source": str(path.relative_to(ROOT.parent.parent)),
+        "source": str(path.relative_to(REPO)),
         "courses": courses,
     }
 

@@ -506,10 +506,10 @@ Two required templates:
 
 ## Seeding
 
-Seed scripts live in `scripts/`. Run with:
+Seed scripts and seed data live in `src/database/seeds/`. Run with:
 
 ```bash
-npm run seed:sociales
+npm run seed:all
 ```
 
 Seed behavior:

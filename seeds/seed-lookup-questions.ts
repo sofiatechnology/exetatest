@@ -28,7 +28,14 @@ interface CollectedPaper {
 }
 
 const TYPE_VALUES = new Set<string>(Object.values(ItemTypeEnum));
-const COLLECTED_DIR = join(process.cwd(), 'scripts', 'lookup', 'collected');
+const COLLECTED_DIR = join(
+  process.cwd(),
+  'src',
+  'database',
+  'seeds',
+  'lookup',
+  'collected',
+);
 
 function loadPapers(): CollectedPaper[] {
   const files = readdirSync(COLLECTED_DIR).filter(

@@ -1,4 +1,4 @@
-// src/database/seeds/cleanup-pre-2015.ts
+// src/database/seeds/clean-db.ts
 import { NestFactory } from '@nestjs/core';
 import { getModelToken } from '@nestjs/sequelize';
 import { AppModule } from 'src/app.module';
