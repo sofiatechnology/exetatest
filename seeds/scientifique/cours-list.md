@@ -1,4 +1,0 @@
-# SCIENTIFIQUE
-
-- anglais
-- francais
