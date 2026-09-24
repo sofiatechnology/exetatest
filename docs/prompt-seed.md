@@ -1,6 +1,6 @@
 @seeds/nutrition
 
-https://www.schoolap.com/exetats/filter?q=&branch=*&option=27
+https://www.schoolap.com/exetats/filter?q=&branch=*&option=20
 
 
 I want to remove the item inside the section and question of nutrition
