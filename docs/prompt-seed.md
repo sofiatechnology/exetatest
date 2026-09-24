@@ -1,9 +1,9 @@
-@seeds/electricite
+@seeds/mecanique
 
-https://www.schoolap.com/exetats/filter?q=&branch=*&option=68
+https://www.schoolap.com/exetats/filter?q=&branch=*&option=12
 
 
-I want to remove the item inside the section and question of electricite
+I want to remove the item inside the section and question of mecanique
 
 
 effacer tout dans la bases des donnes et prendre les donnnes dans ce site et le mettre chaque anne pour sciences, culture generale, cours d'options, langues  create of each years seeds in the exetat folder and run them to put data inside items, item-question etc..
