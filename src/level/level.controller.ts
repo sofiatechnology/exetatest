@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -18,6 +19,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -59,7 +61,7 @@ export class LevelController {
   @ApiOperation({
     summary: 'List levels',
     description:
-      'Public. Optional filter: course_id. Use GET /levels/course/{courseId} to filter by course in the path.',
+      'Public. Optional filter: course_id. Prefer GET /levels/course/{courseId} after the user selects a course.',
   })
   @ApiOkResponse({
     description: 'Levels returned successfully',
@@ -82,12 +84,13 @@ export class LevelController {
 
   @Get('course/:courseId')
   @ApiOperation({
-    summary: 'List levels for a course',
-    description: 'Public. Results are paginated; page and limit are optional.',
+    summary: 'List levels for a selected course',
+    description:
+      'Public. Call this after the user selects a course (use the course id from GET /courses or GET /courses/section/{sectionId}). Returns paginated levels for that course.',
   })
   @ApiParam({
     name: 'courseId',
-    description: 'UUID of the course',
+    description: 'UUID of the selected course',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiOkResponse({
@@ -105,11 +108,12 @@ export class LevelController {
       },
     },
   })
+  @ApiNotFoundResponse({ description: 'Course not found' })
   findByCourse(
-    @Param('courseId') courseId: string,
+    @Param('courseId', ParseUUIDPipe) courseId: string,
     @Query() query: LevelQueryDto,
   ) {
-    return this.levelService.findAll({ ...query, course_id: courseId });
+    return this.levelService.findByCourseId(courseId, query);
   }
 
   @Get(':id')

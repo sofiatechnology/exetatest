@@ -39,6 +39,14 @@ export class LevelService {
     }
   }
 
+  private async getCourseOrFail(courseId: string): Promise<Course> {
+    const course = await this.courseModel.findByPk(courseId);
+    if (!course) {
+      throw new NotFoundException('Cours introuvable');
+    }
+    return course;
+  }
+
   private async getLevelOrFail(id: number): Promise<Level> {
     const level = await this.levelModel.findByPk(id);
     if (!level) {
@@ -85,6 +93,23 @@ export class LevelService {
       page,
       limit,
     };
+  }
+
+  /**
+   * Used after the client selects a course (GET /levels/course/:courseId).
+   * Returns 404 if the course does not exist.
+   */
+  async findByCourseId(
+    courseId: string,
+    query: LevelQueryDto,
+  ): Promise<{
+    data: LevelResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    await this.getCourseOrFail(courseId);
+    return this.findAll({ ...query, course_id: courseId });
   }
 
   async findOne(id: number): Promise<LevelResponseDto> {

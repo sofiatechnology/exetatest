@@ -1131,7 +1131,7 @@ async function main() {
       );
     }
 
-    const existingCourses = await Course.findAll({
+    const existingCourse = await Course.findOne({
       where: {
         name: latinCourseSeed.course,
         section_id: latinCourseSeed.section_id,
@@ -1139,9 +1139,19 @@ async function main() {
       transaction,
     });
 
-    for (const existing of existingCourses) {
+    const course =
+      existingCourse ??
+      (await Course.create(
+        {
+          name: latinCourseSeed.course,
+          section_id: latinCourseSeed.section_id,
+        },
+        { transaction },
+      ));
+
+    if (existingCourse) {
       const existingLevels = await Level.findAll({
-        where: { course_id: existing.id },
+        where: { course_id: course.id },
         transaction,
       });
       const levelIds = existingLevels.map((level) => level.id);
@@ -1152,13 +1162,14 @@ async function main() {
         });
         console.log(`Removed ${removedQuestions} Latin questions`);
         const removedLevels = await Level.destroy({
-          where: { course_id: existing.id },
+          where: { course_id: course.id },
           transaction,
         });
         console.log(`Removed ${removedLevels} Latin levels`);
       }
-      await existing.destroy({ transaction });
-      console.log(`Removed existing Latin course ${existing.id}`);
+      console.log(`Reusing Latin course ${course.id}`);
+    } else {
+      console.log(`Created course Latin (${course.id})`);
     }
 
     const existingModele = await Modele.findOne({
@@ -1179,15 +1190,6 @@ async function main() {
     if (!existingModele) {
       console.log(`Created modele ${modele.id}`);
     }
-
-    const course = await Course.create(
-      {
-        name: latinCourseSeed.course,
-        section_id: latinCourseSeed.section_id,
-      },
-      { transaction },
-    );
-    console.log(`Created course Latin (${course.id})`);
 
     let levelCount = 0;
     let questionCount = 0;
