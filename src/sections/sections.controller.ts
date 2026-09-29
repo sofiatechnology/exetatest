@@ -12,7 +12,7 @@ export class SectionsController {
   @ApiOperation({
     summary: 'List DRC exam sections',
     description:
-      'Returns the fixed catalog of DRC exam sections (no database table). Each section groups subjects; subjects group test-year blocks; blocks group questions.',
+      'Returns the catalog of DRC exam sections from the sections table. Each section groups subjects; subjects group test-year blocks; blocks group questions.',
   })
   @ApiResponse({
     status: 200,

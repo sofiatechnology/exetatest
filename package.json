@@ -30,6 +30,7 @@
     "grant:admin": "ts-node -r tsconfig-paths/register scripts/grant-admin.ts",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
+    "db:seed:sections": "ts-node -r tsconfig-paths/register scripts/seed-sections.ts",
     "email": "email dev --dir src/email/templates --port 3001"
   },
   "dependencies": {

@@ -2,12 +2,18 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { fn, col } from 'sequelize';
 import { Item } from '../models/item.model';
+import { Section } from '../models/section.model';
 import { User, UserRoleEnum } from '../models/user.model';
-import { DRC_SECTIONS, DrcSection } from './drc-sections.constants';
+
+export type CatalogSection = {
+  id: string;
+  title: string;
+};
 
 export type AdminStatsResponse = {
   totalItems: number;
@@ -23,13 +29,33 @@ export type AdminSectionSummary = {
 };
 
 @Injectable()
-export class SectionsService {
+export class SectionsService implements OnModuleInit {
+  private cache: CatalogSection[] = [];
+
   constructor(
+    @InjectModel(Section)
+    private readonly sectionModel: typeof Section,
     @InjectModel(Item)
     private readonly itemModel: typeof Item,
     @InjectModel(User)
     private readonly userModel: typeof User,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.reloadCache();
+  }
+
+  private toCatalogSection(section: Section): CatalogSection {
+    return { id: section.id, title: section.name };
+  }
+
+  private async reloadCache(): Promise<void> {
+    const rows = await this.sectionModel.findAll({
+      order: [['id', 'ASC']],
+    });
+    this.cache = rows.map((row) => this.toCatalogSection(row));
+  }
+
   /**
    * Validates a section id for profile PATCH. Returns null to clear. Throws if id is not found.
    */
@@ -48,19 +74,19 @@ export class SectionsService {
     return id;
   }
 
-  getAllSections(): DrcSection[] {
-    return [...DRC_SECTIONS];
+  getAllSections(): CatalogSection[] {
+    return [...this.cache];
   }
 
   getSectionCount(): number {
-    return DRC_SECTIONS.length;
+    return this.cache.length;
   }
 
-  findById(id: string): DrcSection | undefined {
-    return DRC_SECTIONS.find((section) => section.id === id);
+  findById(id: string): CatalogSection | undefined {
+    return this.cache.find((section) => section.id === id);
   }
 
-  getSectionById(id: string): DrcSection {
+  getSectionById(id: string): CatalogSection {
     const section = this.findById(id);
     if (!section) {
       throw new NotFoundException('Section introuvable');
@@ -72,7 +98,7 @@ export class SectionsService {
     const [totalItems, totalSections, totalUsers, totalAdmins] =
       await Promise.all([
         this.itemModel.count(),
-        this.itemModel.count({ distinct: true, col: 'section_id' }),
+        this.sectionModel.count(),
         this.userModel.count(),
         this.userModel.count({ where: { role: UserRoleEnum.ADMIN } }),
       ]);
@@ -91,7 +117,7 @@ export class SectionsService {
       rows.map((row) => [row.section_id, Number(row.itemCount)]),
     );
 
-    return DRC_SECTIONS.map((section) => ({
+    return this.cache.map((section) => ({
       section_id: section.id,
       title: section.title,
       itemCount: itemCountBySectionId.get(section.id) ?? 0,

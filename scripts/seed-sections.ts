@@ -1,10 +1,7 @@
 import 'dotenv/config';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { Sequelize } from 'sequelize-typescript';
-import { User } from '../src/models/user.model';
-import { Otp } from '../src/models/otp.model';
-import { Item } from '../src/models/item.model';
-import { ItemCourse } from '../src/models/item-course.model';
-import { ItemQuestion } from '../src/models/item-question.model';
 import { Section } from '../src/models/section.model';
 
 async function main() {
@@ -15,7 +12,7 @@ async function main() {
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    models: [User, Otp, Item, ItemCourse, ItemQuestion, Section],
+    models: [Section],
     dialectOptions: {
       ssl: {
         require: true,
@@ -26,18 +23,23 @@ async function main() {
   });
 
   await sequelize.authenticate();
-  // eslint-disable-next-line no-console
-  console.log('Connected. Running sync({ alter: true }) for all registered models...');
 
-  await sequelize.sync({ alter: true });
+  const migrationPath = join(
+    __dirname,
+    'migrations',
+    '005-create-sections.sql',
+  );
+  const sql = readFileSync(migrationPath, 'utf8');
+  await sequelize.query(sql);
 
+  const count = await Section.count();
   // eslint-disable-next-line no-console
-  console.log('Database schema synced successfully.');
+  console.log(`Sections table ready with ${count} rows.`);
   await sequelize.close();
 }
 
 main().catch(async (err) => {
   // eslint-disable-next-line no-console
-  console.error('Sync failed:', err);
+  console.error('Seed sections failed:', err);
   process.exitCode = 1;
 });

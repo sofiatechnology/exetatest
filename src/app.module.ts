@@ -16,6 +16,7 @@ import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
 import { ItemCourse } from './models/item-course.model';
 import { ItemQuestion } from './models/item-question.model';
+import { Section } from './models/section.model';
 import { EmailSuppression } from './models/email-suppression.model';
 import { WebhookEvent } from './models/webhook-event.model';
 import { ActivityStreakInterceptor } from './common/interceptors/activity-streak.interceptor';
@@ -75,6 +76,7 @@ import { ActivityStreakInterceptor } from './common/interceptors/activity-streak
       Item,
       ItemCourse,
       ItemQuestion,
+      Section,
       EmailSuppression,
       WebhookEvent,
     ]),

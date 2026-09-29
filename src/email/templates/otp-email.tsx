@@ -22,7 +22,7 @@ export default function OtpEmail({
 }: OtpEmailProps) {
   return (
     <EmailLayout
-      preview={`Votre code de connexion ${appName} expire dans 10 minutes`}
+      preview={`Votre code de vérification est ${otp}. Il expire dans 10 minutes.`}
       appName={appName}
       logoUrl={logoUrl}
       appUrl={appUrl}
@@ -38,15 +38,15 @@ export default function OtpEmail({
 
       <Text className="m-0 mb-6 text-[15px] leading-relaxed text-on-surface">
         Vous avez demandé à vous connecter à votre compte{' '}
-        <strong>{appName}</strong>. Utilisez le code ci-dessous pour finaliser
-        votre connexion.
+        <strong>{appName}</strong>. Votre code de vérification est{' '}
+        <strong>{otp}</strong>.
       </Text>
 
-      <Section className="my-7 rounded-2xl bg-brand-container px-5 py-6 text-center">
-        <Text className="m-0 mb-2 text-[13px] font-bold uppercase tracking-wider text-brand-on-container">
-          Votre code OTP
+      <Section className="my-7 rounded-2xl bg-[#EEF3F8] px-5 py-6 text-center">
+        <Text className="m-0 mb-3 text-[13px] font-semibold text-[#5F6368]">
+          Code demandé
         </Text>
-        <Text className="m-0 font-mono text-[40px] font-bold tracking-[8px] text-brand-on-container">
+        <Text className="m-0 font-mono text-[40px] font-bold tracking-[12px] text-[#202124]">
           {otp}
         </Text>
       </Section>

@@ -486,7 +486,7 @@ export class EmailService {
     const result = await this.sendEmail({
       appName,
       to: email,
-      subject: `Votre code de connexion ${appName}`,
+      subject: `Votre code de vérification ${appName}`,
       html,
       text,
       category: 'transactional',
