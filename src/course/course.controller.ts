@@ -20,6 +20,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -57,7 +58,8 @@ export class CourseController {
   @Get()
   @ApiOperation({
     summary: 'List courses',
-    description: 'Public. Optional filter: section_id.',
+    description:
+      'Public. Optional filter: section_id. Use GET /courses/section/{sectionId} to filter by section in the path.',
   })
   @ApiOkResponse({
     description: 'Courses returned successfully',
@@ -76,6 +78,38 @@ export class CourseController {
   })
   findAll(@Query() query: CourseQueryDto) {
     return this.courseService.findAll(query);
+  }
+
+  @Get('section/:sectionId')
+  @ApiOperation({
+    summary: 'List courses for a section',
+    description: 'Public. Results are paginated; page and limit are optional.',
+  })
+  @ApiParam({
+    name: 'sectionId',
+    description: 'Section identifier',
+    example: '02',
+  })
+  @ApiOkResponse({
+    description: 'Courses for the section returned successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/CourseResponseDto' },
+        },
+        total: { type: 'number', example: 12 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 20 },
+      },
+    },
+  })
+  findBySection(
+    @Param('sectionId') sectionId: string,
+    @Query() query: CourseQueryDto,
+  ) {
+    return this.courseService.findAll({ ...query, section_id: sectionId });
   }
 
   @Get(':id')
