@@ -5,11 +5,12 @@ import { SectionsController } from './sections.controller';
 import { AdminSectionsController } from './admin.controller';
 import { Item } from '../models/item.model';
 import { Section } from '../models/section.model';
+import { Course } from '../models/course.model';
 import { User } from '../models/user.model';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Section, Item, User])],
+  imports: [SequelizeModule.forFeature([Section, Course, Item, User])],
   providers: [SectionsService, RolesGuard],
   controllers: [SectionsController, AdminSectionsController],
   exports: [SectionsService],

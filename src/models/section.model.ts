@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { Course } from './course.model';
 
 interface SectionCreationAttributes {
   id: string;
@@ -21,6 +22,9 @@ export class Section extends Model<Section, SectionCreationAttributes> {
     allowNull: false,
   })
   declare name: string;
+
+  @HasMany(() => Course)
+  declare courses: Course[];
 
   @Column({
     type: DataType.DATE,

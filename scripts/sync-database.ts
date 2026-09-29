@@ -6,6 +6,7 @@ import { Item } from '../src/models/item.model';
 import { ItemCourse } from '../src/models/item-course.model';
 import { ItemQuestion } from '../src/models/item-question.model';
 import { Section } from '../src/models/section.model';
+import { Course } from '../src/models/course.model';
 
 async function main() {
   const sequelize = new Sequelize({
@@ -15,7 +16,7 @@ async function main() {
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    models: [User, Otp, Item, ItemCourse, ItemQuestion, Section],
+    models: [User, Otp, Item, ItemCourse, ItemQuestion, Section, Course],
     dialectOptions: {
       ssl: {
         require: true,
