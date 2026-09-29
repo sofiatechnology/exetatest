@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   OnModuleInit,
@@ -9,7 +10,11 @@ import { fn, col } from 'sequelize';
 import { Item } from '../models/item.model';
 import { Section } from '../models/section.model';
 import { User, UserRoleEnum } from '../models/user.model';
+import { CreateSectionDto } from './dto/create-section.dto';
+import { UpdateSectionDto } from './dto/update-section.dto';
+import { SectionResponseDto } from './dto/section-response.dto';
 
+/** Internal catalog shape used by profile/legacy matching (title = name). */
 export type CatalogSection = {
   id: string;
   title: string;
@@ -49,11 +54,28 @@ export class SectionsService implements OnModuleInit {
     return { id: section.id, title: section.name };
   }
 
+  private toResponse(section: Section): SectionResponseDto {
+    return {
+      id: section.id,
+      name: section.name,
+      created_at: section.createdAt,
+      updated_at: section.updatedAt,
+    };
+  }
+
   private async reloadCache(): Promise<void> {
     const rows = await this.sectionModel.findAll({
       order: [['id', 'ASC']],
     });
     this.cache = rows.map((row) => this.toCatalogSection(row));
+  }
+
+  private async getSectionOrFail(id: string): Promise<Section> {
+    const section = await this.sectionModel.findByPk(id);
+    if (!section) {
+      throw new NotFoundException('Section introuvable');
+    }
+    return section;
   }
 
   /**
@@ -92,6 +114,54 @@ export class SectionsService implements OnModuleInit {
       throw new NotFoundException('Section introuvable');
     }
     return section;
+  }
+
+  async findAll(): Promise<SectionResponseDto[]> {
+    const rows = await this.sectionModel.findAll({
+      order: [['id', 'ASC']],
+    });
+    return rows.map((row) => this.toResponse(row));
+  }
+
+  async findOne(id: string): Promise<SectionResponseDto> {
+    return this.toResponse(await this.getSectionOrFail(id));
+  }
+
+  async create(dto: CreateSectionDto): Promise<SectionResponseDto> {
+    const id = dto.id.trim();
+    const name = dto.name.trim();
+    if (!name) {
+      throw new BadRequestException('name est requis');
+    }
+
+    const existing = await this.sectionModel.findByPk(id);
+    if (existing) {
+      throw new ConflictException('Une section avec cet id existe déjà');
+    }
+
+    const section = await this.sectionModel.create({ id, name });
+    await this.reloadCache();
+    return this.toResponse(section);
+  }
+
+  async update(id: string, dto: UpdateSectionDto): Promise<SectionResponseDto> {
+    const section = await this.getSectionOrFail(id);
+    if (dto.name !== undefined) {
+      const name = dto.name.trim();
+      if (!name) {
+        throw new BadRequestException('name est requis');
+      }
+      section.name = name;
+    }
+    await section.save();
+    await this.reloadCache();
+    return this.toResponse(section);
+  }
+
+  async remove(id: string): Promise<void> {
+    const section = await this.getSectionOrFail(id);
+    await section.destroy();
+    await this.reloadCache();
   }
 
   async getAdminStats(): Promise<AdminStatsResponse> {

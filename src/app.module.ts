@@ -11,6 +11,10 @@ import { UsersModule } from './users/users.module';
 import { ItemModule } from './item/item.module';
 import { ItemCourseModule } from './item-course/item-course.module';
 import { ItemQuestionModule } from './item-question/item-question.module';
+import { CourseModule } from './course/course.module';
+import { LevelModule } from './level/level.module';
+import { ModeleModule } from './modele/modele.module';
+import { QuestionModule } from './question/question.module';
 import { User } from './models/user.model';
 import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
@@ -95,6 +99,10 @@ import { ActivityStreakInterceptor } from './common/interceptors/activity-streak
     ItemModule,
     ItemCourseModule,
     ItemQuestionModule,
+    CourseModule,
+    LevelModule,
+    ModeleModule,
+    QuestionModule,
   ],
   controllers: [],
   providers: [

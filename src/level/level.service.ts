@@ -1,0 +1,102 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { FindOptions, WhereOptions } from 'sequelize';
+import { Course } from '../models/course.model';
+import { Level } from '../models/level.model';
+import { CreateLevelDto } from './dto/create-level.dto';
+import { UpdateLevelDto } from './dto/update-level.dto';
+import { LevelQueryDto } from './dto/level-query.dto';
+import { LevelResponseDto } from './dto/level-response.dto';
+
+@Injectable()
+export class LevelService {
+  constructor(
+    @InjectModel(Level)
+    private readonly levelModel: typeof Level,
+    @InjectModel(Course)
+    private readonly courseModel: typeof Course,
+  ) {}
+
+  private toResponse(level: Level): LevelResponseDto {
+    return {
+      id: level.id,
+      course_id: level.course_id,
+      created_at: level.createdAt,
+      updated_at: level.updatedAt,
+    };
+  }
+
+  private async ensureCourseExists(courseId: string): Promise<void> {
+    const course = await this.courseModel.findByPk(courseId);
+    if (!course) {
+      throw new BadRequestException('Cours introuvable');
+    }
+  }
+
+  private async getLevelOrFail(id: number): Promise<Level> {
+    const level = await this.levelModel.findByPk(id);
+    if (!level) {
+      throw new NotFoundException('Niveau introuvable');
+    }
+    return level;
+  }
+
+  async create(dto: CreateLevelDto): Promise<LevelResponseDto> {
+    await this.ensureCourseExists(dto.course_id);
+    const level = await this.levelModel.create({ course_id: dto.course_id });
+    return this.toResponse(level);
+  }
+
+  async findAll(query: LevelQueryDto): Promise<{
+    data: LevelResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+    const where: WhereOptions<Level> = {};
+    if (query.course_id !== undefined) {
+      where.course_id = query.course_id;
+    }
+
+    const options: FindOptions<Level> = {
+      where,
+      order: [['id', 'ASC']],
+      limit,
+      offset,
+    };
+
+    const { rows, count } = await this.levelModel.findAndCountAll(options);
+    return {
+      data: rows.map((row) => this.toResponse(row)),
+      total: count,
+      page,
+      limit,
+    };
+  }
+
+  async findOne(id: number): Promise<LevelResponseDto> {
+    return this.toResponse(await this.getLevelOrFail(id));
+  }
+
+  async update(id: number, dto: UpdateLevelDto): Promise<LevelResponseDto> {
+    const level = await this.getLevelOrFail(id);
+    if (dto.course_id !== undefined) {
+      await this.ensureCourseExists(dto.course_id);
+      level.course_id = dto.course_id;
+    }
+    await level.save();
+    return this.toResponse(level);
+  }
+
+  async remove(id: number): Promise<void> {
+    const level = await this.getLevelOrFail(id);
+    await level.destroy();
+  }
+}
