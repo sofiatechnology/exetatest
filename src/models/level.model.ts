@@ -4,11 +4,13 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
 import { Course } from './course.model';
+import { Question } from './question.model';
 
 interface LevelCreationAttributes {
   course_id: string;
@@ -35,6 +37,9 @@ export class Level extends Model<Level, LevelCreationAttributes> {
 
   @BelongsTo(() => Course)
   declare course: Course;
+
+  @HasMany(() => Question)
+  declare questions: Question[];
 
   @Column({
     type: DataType.DATE,

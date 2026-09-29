@@ -9,6 +9,7 @@ import { Section } from '../src/models/section.model';
 import { Course } from '../src/models/course.model';
 import { Level } from '../src/models/level.model';
 import { Modele } from '../src/models/modele.model';
+import { Question } from '../src/models/question.model';
 
 async function main() {
   const sequelize = new Sequelize({
@@ -28,6 +29,7 @@ async function main() {
       Course,
       Level,
       Modele,
+      Question,
     ],
     dialectOptions: {
       ssl: {

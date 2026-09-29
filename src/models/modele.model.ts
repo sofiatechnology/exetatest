@@ -1,4 +1,12 @@
-import { Column, DataType, Default, Model, Table } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Default,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Question } from './question.model';
 
 interface ModeleCreationAttributes {
   title: string;
@@ -46,6 +54,9 @@ export class Modele extends Model<Modele, ModeleCreationAttributes> {
     field: 'public',
   })
   declare is_public: boolean;
+
+  @HasMany(() => Question)
+  declare questions: Question[];
 
   @Column({
     type: DataType.DATE,
