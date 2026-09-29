@@ -19,6 +19,7 @@ import { ItemQuestion } from './models/item-question.model';
 import { Section } from './models/section.model';
 import { Course } from './models/course.model';
 import { Level } from './models/level.model';
+import { Modele } from './models/modele.model';
 import { EmailSuppression } from './models/email-suppression.model';
 import { WebhookEvent } from './models/webhook-event.model';
 import { ActivityStreakInterceptor } from './common/interceptors/activity-streak.interceptor';
@@ -81,6 +82,7 @@ import { ActivityStreakInterceptor } from './common/interceptors/activity-streak
       Section,
       Course,
       Level,
+      Modele,
       EmailSuppression,
       WebhookEvent,
     ]),
