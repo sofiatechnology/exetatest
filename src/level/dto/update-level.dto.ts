@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateLevelDto {
   @ApiPropertyOptional({
@@ -9,4 +9,18 @@ export class UpdateLevelDto {
   @IsOptional()
   @IsUUID()
   course_id?: string;
+
+  @ApiPropertyOptional({
+    example: 'TEXTE 1 : PRO ARCHIA, §§1-4a',
+  })
+  @IsOptional()
+  @IsString()
+  title?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Si quid est in me ingenii...',
+  })
+  @IsOptional()
+  @IsString()
+  passage?: string | null;
 }

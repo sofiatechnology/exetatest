@@ -14,6 +14,8 @@ import { Question } from './question.model';
 
 interface LevelCreationAttributes {
   course_id: string;
+  title?: string | null;
+  passage?: string | null;
 }
 
 @Table({
@@ -37,6 +39,18 @@ export class Level extends Model<Level, LevelCreationAttributes> {
 
   @BelongsTo(() => Course)
   declare course: Course;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+  })
+  declare title: string | null;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  declare passage: string | null;
 
   @HasMany(() => Question)
   declare questions: Question[];

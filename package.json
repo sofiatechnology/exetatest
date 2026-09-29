@@ -31,6 +31,8 @@
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
     "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
     "db:seed:sections": "ts-node -r tsconfig-paths/register scripts/seed-sections.ts",
+    "db:seed:latin-philo:courses": "ts-node -r tsconfig-paths/register seeds/latin-philo/cours/index.ts",
+    "db:seed:latin": "ts-node -r tsconfig-paths/register seeds/latin-philo/cours/latin.ts",
     "email": "email dev --dir src/email/templates --port 3001"
   },
   "dependencies": {

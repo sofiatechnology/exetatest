@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateLevelDto {
   @ApiProperty({
@@ -9,4 +9,20 @@ export class CreateLevelDto {
   @IsUUID()
   @IsNotEmpty()
   course_id: string;
+
+  @ApiPropertyOptional({
+    example: 'TEXTE 1 : PRO ARCHIA, §§1-4a',
+    description: 'Level title (e.g. Latin text reference)',
+  })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({
+    example: 'Si quid est in me ingenii...',
+    description: 'Reading passage for this level',
+  })
+  @IsOptional()
+  @IsString()
+  passage?: string;
 }

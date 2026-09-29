@@ -25,6 +25,8 @@ export class LevelService {
     return {
       id: level.id,
       course_id: level.course_id,
+      title: level.title,
+      passage: level.passage,
       created_at: level.createdAt,
       updated_at: level.updatedAt,
     };
@@ -47,7 +49,11 @@ export class LevelService {
 
   async create(dto: CreateLevelDto): Promise<LevelResponseDto> {
     await this.ensureCourseExists(dto.course_id);
-    const level = await this.levelModel.create({ course_id: dto.course_id });
+    const level = await this.levelModel.create({
+      course_id: dto.course_id,
+      title: dto.title?.trim() || null,
+      passage: dto.passage?.trim() || null,
+    });
     return this.toResponse(level);
   }
 
@@ -90,6 +96,12 @@ export class LevelService {
     if (dto.course_id !== undefined) {
       await this.ensureCourseExists(dto.course_id);
       level.course_id = dto.course_id;
+    }
+    if (dto.title !== undefined) {
+      level.title = dto.title === null ? null : dto.title.trim() || null;
+    }
+    if (dto.passage !== undefined) {
+      level.passage = dto.passage === null ? null : dto.passage.trim() || null;
     }
     await level.save();
     return this.toResponse(level);

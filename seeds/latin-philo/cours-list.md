@@ -1,16 +1,14 @@
 # LATIN – PHILO
 
-1. Religion
-2. Éducation à la vie
-3. Éducation civique et morale
-4. Informatique
-5. Biologie
-6. Éducation physique
-7. Géographie
-8. Histoire
-9. Mathématiques
-10. Philosophie
-11. Physique
-12. Anglais
-13. Français
-14. Latin
+1. Éducation civique et morale
+2. Informatique
+3. Biologie
+4. Éducation physique
+5. Géographie
+6. Histoire
+7. Mathématiques
+8. Philosophie
+9. Physique
+10. Anglais
+11. Français
+12. Latin

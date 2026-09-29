@@ -20,6 +20,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -57,7 +58,8 @@ export class LevelController {
   @Get()
   @ApiOperation({
     summary: 'List levels',
-    description: 'Public. Optional filter: course_id.',
+    description:
+      'Public. Optional filter: course_id. Use GET /levels/course/{courseId} to filter by course in the path.',
   })
   @ApiOkResponse({
     description: 'Levels returned successfully',
@@ -76,6 +78,38 @@ export class LevelController {
   })
   findAll(@Query() query: LevelQueryDto) {
     return this.levelService.findAll(query);
+  }
+
+  @Get('course/:courseId')
+  @ApiOperation({
+    summary: 'List levels for a course',
+    description: 'Public. Results are paginated; page and limit are optional.',
+  })
+  @ApiParam({
+    name: 'courseId',
+    description: 'UUID of the course',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiOkResponse({
+    description: 'Levels for the course returned successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/LevelResponseDto' },
+        },
+        total: { type: 'number', example: 10 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 20 },
+      },
+    },
+  })
+  findByCourse(
+    @Param('courseId') courseId: string,
+    @Query() query: LevelQueryDto,
+  ) {
+    return this.levelService.findAll({ ...query, course_id: courseId });
   }
 
   @Get(':id')
