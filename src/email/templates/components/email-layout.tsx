@@ -21,6 +21,8 @@ export interface EmailLayoutProps {
   logoUrl: string;
   appUrl?: string;
   footerNote?: string;
+  /** Optional Schema.org JSON-LD object rendered in <head> */
+  jsonLd?: Record<string, unknown>;
   children: ReactNode;
 }
 
@@ -30,6 +32,7 @@ export function EmailLayout({
   logoUrl,
   appUrl,
   footerNote = 'Ceci est un message automatique, merci de ne pas répondre.',
+  jsonLd,
   children,
 }: EmailLayoutProps) {
   return (
@@ -61,7 +64,17 @@ export function EmailLayout({
           },
         }}
       >
-        <Head />
+        <Head>
+          {jsonLd ? (
+            <script
+              type="application/ld+json"
+              // JSON-LD must be a raw script body for Gmail markup parsers
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(jsonLd),
+              }}
+            />
+          ) : null}
+        </Head>
         <Body className="m-0 bg-background font-sans text-on-surface">
           <Preview>{preview}</Preview>
           <Container className="mx-auto max-w-[560px] px-4 py-10">
