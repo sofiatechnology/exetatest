@@ -34,7 +34,11 @@ async function bootstrap() {
 
   // Enable CORS for all origins
   app.enableCors({
-    origin: ['https://exetatest.expo.app', 'https://exetatest.vercel.app'],
+    origin: [
+      'https://exetatest.expo.app',
+      'https://exetatest.vercel.app',
+      'http://localhost:8081',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',

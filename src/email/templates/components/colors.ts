@@ -1,6 +1,6 @@
 /**
  * Brand colors for transactional emails (light theme).
- * Matches the EXETATEST / Scratch mobile palette.
+ * Shared by all templates under `src/email/templates`.
  */
 export const emailColors = {
   primary: '#456731',

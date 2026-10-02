@@ -1,5 +1,6 @@
 import { Heading, Link, Section, Text } from 'react-email';
 import { EmailLayout } from './components/email-layout';
+import { OtpCodeCard } from './components/otp-code-card';
 
 export interface OtpEmailProps {
   name: string;
@@ -28,6 +29,8 @@ export default function OtpEmail({
       appUrl={appUrl}
       footerNote="Restez connecté(e) !"
     >
+      <OtpCodeCard otp={otp} />
+
       <Heading className="m-0 mb-5 text-center text-[22px] font-bold leading-snug text-on-surface">
         Votre code de connexion
       </Heading>
@@ -41,15 +44,6 @@ export default function OtpEmail({
         <strong>{appName}</strong>. Votre code de vérification est{' '}
         <strong>{otp}</strong>.
       </Text>
-
-      <Section className="my-7 rounded-2xl bg-[#EEF3F8] px-5 py-6 text-center">
-        <Text className="m-0 mb-3 text-[13px] font-semibold text-[#5F6368]">
-          Code demandé
-        </Text>
-        <Text className="m-0 font-mono text-[40px] font-bold tracking-[12px] text-[#202124]">
-          {otp}
-        </Text>
-      </Section>
 
       <Section className="my-6 rounded-2xl bg-surface-low px-[18px] py-[18px]">
         <Text className="m-0 my-1 text-sm leading-normal text-on-surface-variant">
@@ -86,7 +80,7 @@ export default function OtpEmail({
 OtpEmail.PreviewProps = {
   name: 'Justin Bisimwa',
   appName: 'EXETATEST',
-  otp: '123456',
+  otp: '571716',
   ipAddress: '192.168.1.50',
   formattedDate: '2026-06-14 12:00:00',
   appUrl: 'http://localhost:3000',
