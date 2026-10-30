@@ -6,11 +6,19 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { FindOptions, WhereOptions } from 'sequelize';
 import { Course } from '../models/course.model';
+import { Level } from '../models/level.model';
 import { Section } from '../models/section.model';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
 import { CourseResponseDto } from './dto/course-response.dto';
+
+export interface CourseListResponse {
+  data: CourseResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 @Injectable()
 export class CourseService {
@@ -28,6 +36,14 @@ export class CourseService {
       section_id: course.section_id,
       created_at: course.createdAt,
       updated_at: course.updatedAt,
+      levels: course.levels?.map((level) => ({
+        id: level.id,
+        course_id: level.course_id,
+        title: level.title,
+        passage: level.passage,
+        created_at: level.createdAt,
+        updated_at: level.updatedAt,
+      })),
     };
   }
 
@@ -57,12 +73,21 @@ export class CourseService {
     return this.toResponse(course);
   }
 
-  async findAll(query: CourseQueryDto): Promise<{
-    data: CourseResponseDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  async findAll(query: CourseQueryDto): Promise<CourseListResponse> {
+    return this.list(query, false);
+  }
+
+  async findBySection(
+    sectionId: string,
+    query: CourseQueryDto,
+  ): Promise<CourseListResponse> {
+    return this.list({ ...query, section_id: sectionId }, true);
+  }
+
+  private async list(
+    query: CourseQueryDto,
+    requireLevels: boolean,
+  ): Promise<CourseListResponse> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const offset = (page - 1) * limit;
@@ -79,6 +104,10 @@ export class CourseService {
       ],
       limit,
       offset,
+      ...(requireLevels && {
+        include: [{ model: Level, required: true }],
+        distinct: true,
+      }),
     };
 
     const { rows, count } = await this.courseModel.findAndCountAll(options);

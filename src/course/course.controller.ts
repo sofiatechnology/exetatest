@@ -24,7 +24,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CourseService } from './course.service';
+import { CourseListResponse, CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
@@ -76,14 +76,15 @@ export class CourseController {
       },
     },
   })
-  findAll(@Query() query: CourseQueryDto) {
+  findAll(@Query() query: CourseQueryDto): Promise<CourseListResponse> {
     return this.courseService.findAll(query);
   }
 
   @Get('section/:sectionId')
   @ApiOperation({
     summary: 'List courses for a section',
-    description: 'Public. Results are paginated; page and limit are optional.',
+    description:
+      'Public. Returns only courses with at least one level, including their levels. Results are paginated; page and limit are optional.',
   })
   @ApiParam({
     name: 'sectionId',
@@ -108,8 +109,8 @@ export class CourseController {
   findBySection(
     @Param('sectionId') sectionId: string,
     @Query() query: CourseQueryDto,
-  ) {
-    return this.courseService.findAll({ ...query, section_id: sectionId });
+  ): Promise<CourseListResponse> {
+    return this.courseService.findBySection(sectionId, query);
   }
 
   @Get(':id')
