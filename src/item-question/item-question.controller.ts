@@ -16,6 +16,7 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -77,6 +78,26 @@ export class ItemQuestionController {
   })
   findAll(@Query() query: ItemQuestionQueryDto) {
     return this.itemQuestionService.findAll(query);
+  }
+
+  @Get('item/:itemId')
+  @ApiOperation({
+    summary: 'List all questions for an item',
+    description:
+      'Public. Returns every question linked to the item, across all of its courses. Options are randomized per response.',
+  })
+  @ApiParam({
+    name: 'itemId',
+    description: 'UUID of the item whose course questions should be played',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiOkResponse({
+    description:
+      'All questions for the item, across all courses. Returns an empty array when the item has no questions.',
+    type: [ItemQuestionResponseDto],
+  })
+  findByItem(@Param('itemId', ParseUUIDPipe) itemId: string) {
+    return this.itemQuestionService.findByItemId(itemId);
   }
 
   @Get(':id')

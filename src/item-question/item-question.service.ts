@@ -209,6 +209,20 @@ export class ItemQuestionService {
     return questions.map((question) => this.toResponse(question));
   }
 
+  async findByItemId(itemId: string): Promise<ItemQuestionResponseDto[]> {
+    const questions = await this.itemQuestionModel.findAll({
+      include: [
+        {
+          model: ItemCourse,
+          where: { item_id: itemId },
+          attributes: [],
+        },
+      ],
+      order: [['createdAt', 'ASC']],
+    });
+    return questions.map((question) => this.toShuffledResponse(question));
+  }
+
   async createForCourse(
     courseId: string,
     dto: AdminCreateItemQuestionDto,
