@@ -16,6 +16,7 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -24,7 +25,10 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
-import { RandomItemStatsQueryDto } from './dto/random-item-stats-query.dto';
+import {
+  RandomItemStatsFieldEnum,
+  RandomItemStatsQueryDto,
+} from './dto/random-item-stats-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -100,13 +104,34 @@ export class ItemController {
   @ApiOperation({
     summary: 'Get random item for each type',
     description:
-      'Public. Returns one random item for each type (sc, la, cg, co) in the requested section.',
+      'Public. Returns one random item for each type (sc, la, cg, co) in the requested section. Optionally include only selected response fields.',
+  })
+  @ApiQuery({
+    name: 'fields',
+    required: false,
+    enum: RandomItemStatsFieldEnum,
+    isArray: true,
+    style: 'form',
+    explode: false,
+    description:
+      'Comma-separated response fields to include, for example: id,type,year',
   })
   @ApiOkResponse({
     description: 'Random items returned successfully',
     schema: {
       type: 'array',
-      items: { $ref: '#/components/schemas/ItemResponseDto' },
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          type: { type: 'string' },
+          section_id: { type: 'string' },
+          year: { type: 'number' },
+          universal: { type: 'boolean' },
+          created_at: { type: 'string', format: 'date-time' },
+          updated_at: { type: 'string', format: 'date-time' },
+        },
+      },
       example: [
         {
           id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',

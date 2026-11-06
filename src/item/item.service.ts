@@ -13,7 +13,10 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
-import { RandomItemStatsQueryDto } from './dto/random-item-stats-query.dto';
+import {
+  RandomItemStatsFieldEnum,
+  RandomItemStatsQueryDto,
+} from './dto/random-item-stats-query.dto';
 
 export type AdminItemSummary = {
   id: string;
@@ -146,7 +149,7 @@ export class ItemService {
 
   async findRandomStats(
     query: RandomItemStatsQueryDto,
-  ): Promise<ItemResponseDto[]> {
+  ): Promise<Array<ItemResponseDto | Partial<ItemResponseDto>>> {
     const section_id = this.validateSectionId(query.section_id);
     const types = [
       ItemTypeEnum.SCIENCES,
@@ -161,7 +164,42 @@ export class ItemService {
           where: { section_id, type },
           order: [fn('RANDOM')],
         });
-        return item ? this.toResponse(item) : null;
+        if (!item) {
+          return null;
+        }
+
+        const response = this.toResponse(item);
+        if (!query.fields) {
+          return response;
+        }
+
+        const selected: Partial<ItemResponseDto> = {};
+        for (const field of query.fields) {
+          switch (field) {
+            case RandomItemStatsFieldEnum.ID:
+              selected.id = response.id;
+              break;
+            case RandomItemStatsFieldEnum.TYPE:
+              selected.type = response.type;
+              break;
+            case RandomItemStatsFieldEnum.SECTION_ID:
+              selected.section_id = response.section_id;
+              break;
+            case RandomItemStatsFieldEnum.YEAR:
+              selected.year = response.year;
+              break;
+            case RandomItemStatsFieldEnum.UNIVERSAL:
+              selected.universal = response.universal;
+              break;
+            case RandomItemStatsFieldEnum.CREATED_AT:
+              selected.created_at = response.created_at;
+              break;
+            case RandomItemStatsFieldEnum.UPDATED_AT:
+              selected.updated_at = response.updated_at;
+              break;
+          }
+        }
+        return selected;
       }),
     );
 
@@ -171,7 +209,9 @@ export class ItemService {
       );
     }
 
-    return items as ItemResponseDto[];
+    return items.filter(
+      (item): item is Exclude<typeof item, null> => item !== null,
+    );
   }
 
   async update(id: string, dto: UpdateItemDto): Promise<ItemResponseDto> {
