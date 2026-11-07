@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Item } from '../models/item.model';
 import { ItemCourse } from '../models/item-course.model';
+import { ItemQuestion } from '../models/item-question.model';
 import { User } from '../models/user.model';
 import { ItemService } from './item.service';
 import { ItemController } from './item.controller';
@@ -12,7 +13,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Item, ItemCourse, User]),
+    SequelizeModule.forFeature([Item, ItemCourse, ItemQuestion, User]),
     SectionsModule,
   ],
   providers: [ItemService, RolesGuard],

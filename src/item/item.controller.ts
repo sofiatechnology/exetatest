@@ -11,9 +11,11 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -25,6 +27,8 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
+import { CompleteTestQueryDto } from './dto/complete-test-query.dto';
+import { CompleteTestResponseDto } from './dto/complete-test-response.dto';
 import {
   RandomItemStatsFieldEnum,
   RandomItemStatsQueryDto,
@@ -174,6 +178,41 @@ export class ItemController {
   })
   findRandomStats(@Query() query: RandomItemStatsQueryDto) {
     return this.itemService.findRandomStats(query);
+  }
+
+  @Get('/complete-test')
+  @ApiOperation({
+    summary: 'Generate a complete test',
+    description:
+      'Public. Selects one random, question-complete item for each exam category in the section. Categories are ordered for client-side progression. Questions include shuffled options but never reveal the correct answer.',
+  })
+  @ApiQuery({
+    name: 'section_id',
+    required: true,
+    type: String,
+    example: '01',
+    description: 'Section whose exam items should be used.',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    example: 2024,
+    description: 'Optionally restrict all four categories to the same year.',
+  })
+  @ApiOkResponse({
+    description: 'Complete test generated successfully.',
+    type: CompleteTestResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid section_id or year.' })
+  @ApiNotFoundResponse({
+    description:
+      'No question-complete item is available for one or more categories.',
+  })
+  getCompleteTest(
+    @Query() query: CompleteTestQueryDto,
+  ): Promise<CompleteTestResponseDto> {
+    return this.itemService.getCompleteTest(query);
   }
 
   // Item by id
