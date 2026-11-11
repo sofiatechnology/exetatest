@@ -7,6 +7,9 @@ export class ProfileResponseDto {
   @ApiProperty({ format: 'email', example: 'student@example.com' })
   email: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true })
+  avatar: string | null;
+
   @ApiPropertyOptional({
     example: 'LATIN-PHILO',
     nullable: true,

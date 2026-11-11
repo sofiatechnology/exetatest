@@ -25,6 +25,7 @@ import {
 type UserAuthState = {
   id: string;
   email: string;
+  avatar: string | null;
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
@@ -78,6 +79,7 @@ export class UsersService {
     return {
       id: user.id,
       email: user.email,
+      avatar: user.avatar ?? null,
       section: this.resolveSectionLabel(user),
       section_id: user.section_id ?? null,
       created_at: user.createdAt,
@@ -109,6 +111,7 @@ export class UsersService {
     return {
       id: user.id,
       email: user.email,
+      avatar: user.avatar ?? null,
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: user.section_id ?? null,

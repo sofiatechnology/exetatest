@@ -11,6 +11,8 @@ import { JwtStrategy } from './jwt.strategy';
 import { EmailModule } from '../email/email.module';
 import { OtpCleanupService } from './otp-cleanup.service';
 import { UsersModule } from '../users/users.module';
+import { GoogleStrategy } from './google.strategy';
+import { GoogleAuthGuard } from './guards/google.auth.guard';
 
 @Module({
   imports: [
@@ -29,7 +31,13 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, OtpCleanupService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    GoogleAuthGuard,
+    OtpCleanupService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

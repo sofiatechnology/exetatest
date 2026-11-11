@@ -31,6 +31,7 @@ In a country where access to quality educational technology is still rare, this 
 - Profile management and admin-side content management
 - Offline sync support so students can keep studying without a stable connection
 - Passwordless OTP login via email — no passwords to forget or leak
+- Google OAuth sign-in
 - Cached, speed-optimized REST endpoints built for low-bandwidth environments
 
 ---
@@ -95,7 +96,20 @@ Fill in your `.env` file with your database and email credentials, then run:
 npm run start:dev
 ```
 
-The API will be available at `http://localhost:3000`.
+By default, the API is available at `http://localhost:9080`; set `PORT` to
+change the port.
+
+### Google OAuth sign-in
+
+Create a Google OAuth 2.0 Web client in Google Cloud Console. Set its authorized
+redirect URI to the value of `GOOGLE_CALLBACK_URL` in `.env`, and configure
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`. For the
+default local server port, the callback is
+`http://localhost:9080/api/auth/google/callback`.
+
+Open `GET /api/auth/google` in a browser to start sign-in. Google redirects to
+the callback, which returns an `access_token` and the signed-in user. Swagger
+documents both routes at `/api`.
 
 ### Running Tests
 
@@ -112,6 +126,8 @@ npm run build
 |---|---|---|
 | POST | `/auth/otp/send` | Send a one-time login code by email |
 | POST | `/auth/otp/verify` | Verify the code and receive a JWT |
+| GET | `/auth/google` | Start Google OAuth sign-in in a browser |
+| GET | `/auth/google/callback` | Complete Google sign-in and receive a JWT |
 | GET | `/auth/profile` | Get the authenticated user's profile |
 | GET | `/users/profile` | Get current user profile |
 | PATCH | `/users/profile` | Update current user profile |

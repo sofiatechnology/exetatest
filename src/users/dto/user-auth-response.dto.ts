@@ -4,6 +4,9 @@ export class UserAuthResponseDto {
   @ApiProperty({ format: 'email', example: 'student@example.com' })
   email: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true })
+  avatar?: string | null;
+
   @ApiProperty({ type: 'boolean' })
   hasSelectedSections: boolean;
 

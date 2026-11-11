@@ -8,7 +8,7 @@ import { Level } from '../../../src/models/level.model';
 import { Modele } from '../../../src/models/modele.model';
 import { Question } from '../../../src/models/question.model';
 
-/** LATIN – PHILO section id (see scripts/migrations/005-create-sections.sql). */
+/** LATIN – PHILO section id (seeded by the initial schema). */
 export const LATIN_PHILO_SECTION_ID = '01';
 
 /**

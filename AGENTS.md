@@ -118,7 +118,6 @@ src/
 scripts/
   migrations/
     001-initial-schema.sql
-    002-add-user-last-activity-date.sql
   grant-admin.js
   reset-database.js
   sync-database.js

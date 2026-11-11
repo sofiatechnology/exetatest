@@ -44,6 +44,26 @@ export class AuthService {
     return this.userModel.findOne({ where: { email } });
   }
 
+  async findOrCreateGoogleUser(email: string, avatar?: string): Promise<User> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const [user] = await this.userModel.findOrCreate({
+      where: { email: normalizedEmail },
+      defaults: {
+        email: normalizedEmail,
+        ...(avatar ? { avatar } : {}),
+        role: UserRoleEnum.USER,
+        current_streak: 0,
+        longest_streak: 0,
+      },
+    });
+
+    if (avatar && user.avatar !== avatar) {
+      await user.update({ avatar });
+    }
+
+    return user;
+  }
+
   private displayNameFromEmail(email: string): string {
     return email.split('@')[0] || 'Utilisateur';
   }
@@ -126,21 +146,6 @@ export class AuthService {
       access_token: accessToken,
       user: userState,
     };
-  }
-
-  async updateAvatar(userId: string, file: Express.Multer.File) {
-    const user = await this.userModel.findByPk(userId);
-    if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
-    }
-
-    if (!file || !file.buffer) {
-      throw new UnauthorizedException('Aucun fichier fourni');
-    }
-
-    throw new BadRequestException(
-      "La mise a jour d'avatar est temporairement indisponible",
-    );
   }
 
   async sendOTP(
