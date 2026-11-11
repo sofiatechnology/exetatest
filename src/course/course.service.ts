@@ -34,6 +34,9 @@ export class CourseService {
       id: course.id,
       name: course.name,
       section_id: course.section_id,
+      item_id: course.item_id,
+      title: course.title,
+      passage: course.passage,
       created_at: course.createdAt,
       updated_at: course.updatedAt,
       levels: course.levels?.map((level) => ({

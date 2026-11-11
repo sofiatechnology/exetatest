@@ -57,9 +57,11 @@ export class ItemService {
     return {
       id: item.id,
       type: item.type,
+      category: item.category,
       section_id: item.section_id,
       year: item.year,
       universal: item.universal,
+      is_all_sections: item.is_all_sections,
       created_at: item.createdAt,
       updated_at: item.updatedAt,
     };

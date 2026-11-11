@@ -28,9 +28,12 @@ export class QuestionService {
     return {
       id: question.id,
       text: question.text,
+      question: question.question,
+      course_id: question.course_id,
       response: question.response,
       correct_answer: question.correct_answer,
       time: question.time,
+      time_limit: question.time_limit,
       level_id: question.level_id,
       modele_id: question.modele_id,
       created_at: question.createdAt,
@@ -161,6 +164,11 @@ export class QuestionService {
       question.correct_answer = dto.correct_answer;
     }
 
+    if (question.correct_answer === null || question.response === null) {
+      throw new BadRequestException(
+        'Question does not contain legacy response options',
+      );
+    }
     this.validateCorrectAnswer(question.correct_answer, question.response);
 
     if (dto.time !== undefined) {

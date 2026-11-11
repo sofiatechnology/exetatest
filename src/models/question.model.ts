@@ -3,19 +3,25 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
 import { Level } from './level.model';
 import { Modele } from './modele.model';
+import { Course } from './course.model';
+import { QuestionResponse } from './question-response.model';
 
 interface QuestionCreationAttributes {
-  text: string;
-  response: string[];
-  correct_answer: number;
-  time: number;
-  level_id: number;
-  modele_id: string;
+  text?: string | null;
+  response?: string[] | null;
+  correct_answer?: number | null;
+  time?: number | null;
+  level_id?: number | null;
+  modele_id?: string | null;
+  course_id?: string | null;
+  question?: string | null;
+  time_limit?: number | null;
 }
 
 @Table({
@@ -32,47 +38,72 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
 
   @Column({
     type: DataType.TEXT,
-    allowNull: false,
+    allowNull: true,
   })
-  declare text: string;
+  declare text: string | null;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  declare question: string | null;
 
   @Column({
     type: DataType.ARRAY(DataType.TEXT),
-    allowNull: false,
+    allowNull: true,
   })
-  declare response: string[];
+  declare response: string[] | null;
 
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
   })
-  declare correct_answer: number;
+  declare correct_answer: number | null;
 
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
   })
-  declare time: number;
+  declare time: number | null;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
+  declare time_limit: number | null;
+
+  @ForeignKey(() => Course)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+  })
+  declare course_id: string | null;
+
+  @BelongsTo(() => Course)
+  declare course: Course | null;
 
   @ForeignKey(() => Level)
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
   })
-  declare level_id: number;
+  declare level_id: number | null;
 
   @BelongsTo(() => Level)
-  declare level: Level;
+  declare level: Level | null;
 
   @ForeignKey(() => Modele)
   @Column({
     type: DataType.UUID,
-    allowNull: false,
+    allowNull: true,
   })
-  declare modele_id: string;
+  declare modele_id: string | null;
 
   @BelongsTo(() => Modele)
-  declare modele: Modele;
+  declare modele: Modele | null;
+
+  @HasMany(() => QuestionResponse)
+  declare responses: QuestionResponse[];
 
   @Column({
     type: DataType.DATE,

@@ -6,7 +6,14 @@ export class ItemResponseDto {
   id: string;
 
   @ApiProperty({ enum: ItemTypeEnum, example: ItemTypeEnum.SCIENCES })
-  type: ItemTypeEnum;
+  type: ItemTypeEnum | null;
+
+  @ApiProperty({
+    enum: ItemTypeEnum,
+    example: ItemTypeEnum.SCIENCES,
+    nullable: true,
+  })
+  category: ItemTypeEnum | null;
 
   @ApiProperty({ example: '01' })
   section_id: string;
@@ -16,6 +23,9 @@ export class ItemResponseDto {
 
   @ApiProperty({ example: false })
   universal: boolean;
+
+  @ApiProperty({ example: false })
+  is_all_sections: boolean;
 
   @ApiProperty({ example: '2024-06-07T12:00:00.000Z' })
   created_at: Date;

@@ -67,6 +67,9 @@ scripts/         # Seed scripts and SQL
 
 Each feature module follows the same shape: `dto/`, `*.controller.ts`, `*.service.ts`, `*.module.ts`. Controllers handle routing only; business logic lives in services.
 
+The database tables and schema migration are documented in
+[docs/database-schema.md](./docs/database-schema.md).
+
 ---
 
 ## Getting Started

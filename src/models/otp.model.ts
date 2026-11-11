@@ -13,6 +13,8 @@ interface OtpCreationAttributes {
   userId: string;
   code: string;
   expiresAt: Date;
+  opt_number?: string | null;
+  is_used?: boolean;
   isVerified?: boolean;
   attemptCount?: number;
   requestIp?: string | null;
@@ -45,6 +47,19 @@ export class Otp extends Model<Otp, OtpCreationAttributes> {
     allowNull: false,
   })
   declare code: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare opt_number: string | null;
+
+  @Default(false)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
+  declare is_used: boolean;
 
   @Column({
     type: DataType.DATE,

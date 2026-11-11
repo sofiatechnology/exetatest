@@ -10,6 +10,12 @@ import { Course } from '../src/models/course.model';
 import { Level } from '../src/models/level.model';
 import { Modele } from '../src/models/modele.model';
 import { Question } from '../src/models/question.model';
+import { QuestionResponse } from '../src/models/question-response.model';
+import { Revision } from '../src/models/revision.model';
+import { RevisionQuestion } from '../src/models/revision-question.model';
+import { GameSession } from '../src/models/game-session.model';
+import { GamePlayer } from '../src/models/game-player.model';
+import { PlayerAnswer } from '../src/models/player-answer.model';
 
 async function main() {
   const sequelize = new Sequelize({
@@ -30,6 +36,12 @@ async function main() {
       Level,
       Modele,
       Question,
+      QuestionResponse,
+      Revision,
+      RevisionQuestion,
+      GameSession,
+      GamePlayer,
+      PlayerAnswer,
     ],
     dialectOptions: {
       ssl: {
@@ -42,7 +54,9 @@ async function main() {
 
   await sequelize.authenticate();
   // eslint-disable-next-line no-console
-  console.log('Connected. Running sync({ alter: true }) for all registered models...');
+  console.log(
+    'Connected. Running sync({ alter: true }) for all registered models...',
+  );
 
   await sequelize.sync({ alter: true });
 

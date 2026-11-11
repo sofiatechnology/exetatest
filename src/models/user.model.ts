@@ -8,6 +8,10 @@ export enum UserRoleEnum {
 interface UserCreationAttributes {
   email: string;
   country?: string | null;
+  province?: string | null;
+  avatar?: string | null;
+  longitude?: number | null;
+  latitude?: number | null;
   region?: string | null;
   role: UserRoleEnum;
   section?: string | null;
@@ -41,6 +45,30 @@ export class User extends Model<User, UserCreationAttributes> {
     allowNull: true,
   })
   declare country: string | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare province: string | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare avatar: string | null;
+
+  @Column({
+    type: DataType.DOUBLE,
+    allowNull: true,
+  })
+  declare longitude: number | null;
+
+  @Column({
+    type: DataType.DOUBLE,
+    allowNull: true,
+  })
+  declare latitude: number | null;
 
   @Column({
     type: DataType.STRING,

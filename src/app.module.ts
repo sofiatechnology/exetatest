@@ -28,6 +28,12 @@ import { Question } from './models/question.model';
 import { EmailSuppression } from './models/email-suppression.model';
 import { WebhookEvent } from './models/webhook-event.model';
 import { ActivityStreakInterceptor } from './common/interceptors/activity-streak.interceptor';
+import { QuestionResponse } from './models/question-response.model';
+import { Revision } from './models/revision.model';
+import { RevisionQuestion } from './models/revision-question.model';
+import { GameSession } from './models/game-session.model';
+import { GamePlayer } from './models/game-player.model';
+import { PlayerAnswer } from './models/player-answer.model';
 
 @Module({
   imports: [
@@ -91,6 +97,12 @@ import { ActivityStreakInterceptor } from './common/interceptors/activity-streak
       Question,
       EmailSuppression,
       WebhookEvent,
+      QuestionResponse,
+      Revision,
+      RevisionQuestion,
+      GameSession,
+      GamePlayer,
+      PlayerAnswer,
     ]),
     EmailModule,
     AuthModule,
