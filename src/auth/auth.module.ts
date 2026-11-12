@@ -38,6 +38,6 @@ import { GoogleAuthGuard } from './guards/google.auth.guard';
     GoogleAuthGuard,
     OtpCleanupService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

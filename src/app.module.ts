@@ -34,6 +34,7 @@ import { RevisionQuestion } from './models/revision-question.model';
 import { GameSession } from './models/game-session.model';
 import { GamePlayer } from './models/game-player.model';
 import { PlayerAnswer } from './models/player-answer.model';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -111,6 +112,7 @@ import { PlayerAnswer } from './models/player-answer.model';
     ItemModule,
     ItemCourseModule,
     ItemQuestionModule,
+    GameModule,
     CourseModule,
     LevelModule,
     ModeleModule,

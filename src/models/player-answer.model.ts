@@ -22,6 +22,13 @@ interface PlayerAnswerCreationAttributes {
 @Table({
   tableName: 'player_answers',
   timestamps: true,
+  indexes: [
+    {
+      name: 'player_answers_game_player_question_unique',
+      unique: true,
+      fields: ['game_player_id', 'question_id'],
+    },
+  ],
 })
 export class PlayerAnswer extends Model<
   PlayerAnswer,

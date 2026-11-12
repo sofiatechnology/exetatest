@@ -27,6 +27,7 @@ interface GameSessionCreationAttributes {
   status?: GameSessionStatus;
   current_question_index?: number;
   started_at?: Date | null;
+  question_started_at?: Date | null;
   ended_at?: Date | null;
 }
 
@@ -91,6 +92,12 @@ export class GameSession extends Model<
     allowNull: true,
   })
   declare started_at: Date | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  declare question_started_at: Date | null;
 
   @Column({
     type: DataType.DATE,

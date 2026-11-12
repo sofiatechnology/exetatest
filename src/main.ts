@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import { join } from 'path';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ALLOWED_ORIGINS } from './common/constants/allowed-origins';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -32,13 +33,9 @@ async function bootstrap() {
   // Set global prefix for routes
   app.setGlobalPrefix('api');
 
-  // Enable CORS for all origins
+  // Enable CORS for approved application origins
   app.enableCors({
-    origin: [
-      'https://exetatest.expo.app',
-      'https://exetatest.vercel.app',
-      'http://localhost:8081',
-    ],
+    origin: ALLOWED_ORIGINS,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
@@ -55,7 +52,9 @@ async function bootstrap() {
   if (enableSwagger) {
     const config = new DocumentBuilder()
       .setTitle('EXETATEST')
-      .setDescription('API for EXETATEST')
+      .setDescription(
+        'API for EXETATEST. Live quiz sessions use REST endpoints under /api/games and the Socket.IO namespace /games. The host connects with auth: { token }, then emits game:join with { pin_code }; players emit game:join with { pin_code, player_id } returned by POST /api/games/join. Listen for game:joined, game:started, game:player-joined, game:question, game:leaderboard, and game:ended. Submit answers with POST /api/games/{gameSessionId}/answers.',
+      )
       .setVersion('1.0')
       .addBearerAuth(
         {

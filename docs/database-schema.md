@@ -25,9 +25,9 @@ reset script against a database whose data must be retained.
 | `responses`          | `id`, `question_id`, `question`, `option_text`, `is_correct`, timestamps |
 | `revisions`          | `id`, `user_id`, `title`, `auto_scroll`, `public`, timestamps |
 | `revision_questions` | `id`, `revision_id`, `question_id`, `question_order`, `time_limit`, timestamps |
-| `game_sessions`      | `id`, `revision_id`, `host_id`, unique `pin_code`, `status`, `current_question_index`, `started_at`, `ended_at`, timestamps |
+| `game_sessions`      | `id`, `revision_id`, `host_id`, unique `pin_code`, `status`, `current_question_index`, `started_at`, `question_started_at`, `ended_at`, timestamps |
 | `game_players`       | `id`, `game_session_id`, nullable `user_id`, `nickname`, `score`, `joined_at`, timestamps |
-| `player_answers`     | `id`, `game_player_id`, `question_id`, `response_id`, `is_correct`, `time_taken_ms`, `answered_at`, timestamps |
+| `player_answers`     | `id`, `game_player_id`, `question_id`, `response_id`, `is_correct`, `time_taken_ms`, `answered_at`, timestamps; unique per player and question |
 
 `items.type`/`items.universal` and the requested
 `items.category`/`items.is_all_sections` are kept synchronized when items are
@@ -41,3 +41,6 @@ the seeded section codes. Changing them to integers requires a separate data
 migration and client/API update.
 
 The game-session model generates a unique six-digit PIN when one is not supplied.
+Live games use `question_started_at` to validate submitted answer times. Existing
+databases should apply `scripts/migrations/002-live-games.sql`; it also adds the
+unique answer index that prevents duplicate scoring.

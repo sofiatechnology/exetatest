@@ -227,6 +227,7 @@ CREATE TABLE "game_sessions" (
   "status" "enum_game_sessions_status" NOT NULL DEFAULT 'waiting',
   "current_question_index" INTEGER NOT NULL DEFAULT 0,
   "started_at" TIMESTAMPTZ,
+  "question_started_at" TIMESTAMPTZ,
   "ended_at" TIMESTAMPTZ,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -264,3 +265,5 @@ CREATE TABLE "player_answers" (
 CREATE INDEX "player_answers_game_player_id" ON "player_answers" ("game_player_id");
 CREATE INDEX "player_answers_question_id" ON "player_answers" ("question_id");
 CREATE INDEX "player_answers_response_id" ON "player_answers" ("response_id");
+CREATE UNIQUE INDEX "player_answers_game_player_question_unique"
+  ON "player_answers" ("game_player_id", "question_id");
