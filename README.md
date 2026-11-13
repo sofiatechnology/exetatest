@@ -103,13 +103,18 @@ change the port.
 
 Create a Google OAuth 2.0 Web client in Google Cloud Console. Set its authorized
 redirect URI to the value of `GOOGLE_CALLBACK_URL` in `.env`, and configure
-`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`. For the
-default local server port, the callback is
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and
+`GOOGLE_MOBILE_REDIRECT_URI=exetatest://auth/google/callback`. The Google
+authorized redirect URI remains the backend callback; do not replace it with
+the app deep link. For the default local server port, the backend callback is
 `http://localhost:9080/api/auth/google/callback`.
 
 Open `GET /api/auth/google` in a browser to start sign-in. Google redirects to
-the callback, which returns an `access_token` and the signed-in user. Swagger
-documents both routes at `/api`.
+the backend callback, which redirects the browser to the configured mobile app
+callback with an `access_token` query parameter. On failure it returns a generic
+`error` code instead. The app can use the token with
+`GET /api/users/me/profile`, whose response includes the user's avatar URL.
+Swagger documents both Google routes at `/api`.
 
 ### Running Tests
 
@@ -127,7 +132,7 @@ npm run build
 | POST | `/auth/otp/send` | Send a one-time login code by email |
 | POST | `/auth/otp/verify` | Verify the code and receive a JWT |
 | GET | `/auth/google` | Start Google OAuth sign-in in a browser |
-| GET | `/auth/google/callback` | Complete Google sign-in and receive a JWT |
+| GET | `/auth/google/callback` | Complete Google sign-in and redirect to the app with a JWT |
 | GET | `/auth/profile` | Get the authenticated user's profile |
 | GET | `/users/profile` | Get current user profile |
 | PATCH | `/users/profile` | Update current user profile |

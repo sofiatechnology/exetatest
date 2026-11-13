@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  Res,
+  UseGuards,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -7,7 +18,7 @@ import {
   ApiHeader,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { MakeAdminDto } from './dto/make-admin.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
@@ -15,11 +26,17 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { UsersService } from '../users/users.service';
 import { GoogleAuthGuard } from './guards/google.auth.guard';
 import { User } from '../models/user.model';
+import { buildGoogleMobileRedirectUrl } from './utils/google-mobile-redirect.util';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
@@ -43,41 +60,52 @@ export class AuthController {
   @ApiOperation({
     summary: 'Complete Google sign-in',
     description:
-      'Google redirects the browser here after authorization. On success, returns the same access_token and user response as email OTP login. Configure this exact URL as an authorized redirect URI in Google Cloud Console.',
+      'Google redirects the browser here after authorization. This backend URL remains the authorized redirect URI in Google Cloud Console. On success, the browser is redirected to the configured EXETATEST app callback with an access_token query parameter.',
   })
   @ApiResponse({
-    status: 200,
-    description: 'Google sign-in succeeded',
-    schema: {
-      type: 'object',
-      properties: {
-        access_token: { type: 'string', example: 'google-login-jwt' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            email: { type: 'string', example: 'student@example.com' },
-            avatar: { type: 'string', nullable: true },
-            hasSelectedSections: { type: 'boolean' },
-            isFirstLogin: { type: 'boolean' },
-            section_id: { type: 'string', nullable: true },
-            section: { type: 'string', nullable: true },
-            country: { type: 'string', nullable: true },
-            region: { type: 'string', nullable: true },
-            current_streak: { type: 'number' },
-            longest_streak: { type: 'number' },
-          },
-        },
-      },
-    },
+    status: 302,
+    description:
+      'Redirects to the app callback with access_token on success or a generic error code on failure',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Google sign-in failed or the Google email is not verified',
-  })
-  async googleAuthCallback(@Req() req: Request & { user: User }) {
-    const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
-    return this.authService.login(req.user, ipAddress);
+  async googleAuthCallback(
+    @Req() req: Request & { user?: User },
+    @Res() res: Response,
+  ): Promise<void> {
+    if (res.headersSent) {
+      return;
+    }
+
+    if (!req.user) {
+      res.redirect(
+        HttpStatus.FOUND,
+        buildGoogleMobileRedirectUrl(this.configService, {
+          error: 'google_auth_failed',
+        }),
+      );
+      return;
+    }
+
+    try {
+      const ipAddress = req.ip || req.socket.remoteAddress || '0.0.0.0';
+      const login = await this.authService.login(req.user, ipAddress);
+      res.redirect(
+        HttpStatus.FOUND,
+        buildGoogleMobileRedirectUrl(this.configService, {
+          access_token: login.access_token,
+        }),
+      );
+    } catch (error) {
+      this.logger.error(
+        'Google sign-in callback failed',
+        error instanceof Error ? error.stack : String(error),
+      );
+      res.redirect(
+        HttpStatus.FOUND,
+        buildGoogleMobileRedirectUrl(this.configService, {
+          error: 'google_auth_failed',
+        }),
+      );
+    }
   }
 
   @Post('otp/send')
