@@ -17,6 +17,16 @@ import { EmailService } from '../email/email.service';
 import { createHmac, randomInt } from 'crypto';
 import { Op } from 'sequelize';
 import { UsersService } from '../users/users.service';
+import {
+  CodeChallengeMethod,
+  OAuth2Client,
+  TokenPayload,
+} from 'google-auth-library';
+import {
+  GoogleOAuthState,
+  signGoogleOAuthState,
+  verifyGoogleOAuthState,
+} from './utils/google-oauth-state.util';
 
 @Injectable()
 export class AuthService {
@@ -28,9 +38,11 @@ export class AuthService {
   private static readonly OTP_IP_RATE_LIMIT_MAX_REQUESTS = 10;
   private static readonly OTP_MAX_VERIFY_ATTEMPTS = 5;
   private static readonly INVALID_OTP_MESSAGE = 'Code OTP invalide ou expiré';
+  private googleClient?: OAuth2Client;
+  private readonly googleRedirectUri: string;
 
   constructor(
-    private configService: ConfigService,
+    private readonly configService: ConfigService,
     @InjectModel(User)
     private userModel: typeof User,
     @InjectModel(Otp)
@@ -38,7 +50,11 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private usersService: UsersService,
-  ) {}
+  ) {
+    this.googleRedirectUri = this.configService.getOrThrow<string>(
+      'GOOGLE_REDIRECT_URI',
+    );
+  }
 
   async validateUser(email: string): Promise<User | null> {
     return this.userModel.findOne({ where: { email } });
@@ -62,6 +78,207 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  private getGoogleClient(): OAuth2Client {
+    if (!this.googleClient) {
+      this.googleClient = new OAuth2Client(
+        this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+        this.configService.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
+        this.googleRedirectUri,
+      );
+    }
+
+    return this.googleClient;
+  }
+
+  private getGoogleRedirectTarget(
+    requestedUri: string,
+  ): Pick<GoogleOAuthState, 'platform' | 'appRedirect'> {
+    const appScheme = this.configService.get<string>('APP_SCHEME');
+    if (
+      appScheme &&
+      requestedUri.startsWith(appScheme) &&
+      !requestedUri.includes('#')
+    ) {
+      return { platform: 'mobile', appRedirect: requestedUri };
+    }
+
+    const webUrl = this.configService.getOrThrow<string>('WEB_URL');
+    if (requestedUri.startsWith(webUrl)) {
+      try {
+        const target = new URL(requestedUri);
+        const frontend = new URL(webUrl);
+        if (
+          target.origin === frontend.origin &&
+          !target.username &&
+          !target.password &&
+          !target.hash
+        ) {
+          return { platform: 'web', appRedirect: requestedUri };
+        }
+      } catch {
+        throw new BadRequestException('Invalid redirect_uri');
+      }
+    }
+
+    throw new BadRequestException('Invalid redirect_uri');
+  }
+
+  createGoogleAuthorizationUrl(query: Record<string, unknown>): string {
+    const appRedirect = query.redirect_uri;
+    const clientState = query.state;
+    if (
+      typeof appRedirect !== 'string' ||
+      typeof clientState !== 'string' ||
+      !appRedirect ||
+      !clientState ||
+      clientState.length > 512
+    ) {
+      throw new BadRequestException('redirect_uri and state are required');
+    }
+
+    const target = this.getGoogleRedirectTarget(appRedirect);
+    const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
+    if (
+      query.client_id !== undefined &&
+      (typeof query.client_id !== 'string' || query.client_id !== clientId)
+    ) {
+      throw new BadRequestException('Invalid OAuth client_id');
+    }
+
+    if (
+      query.response_type !== undefined &&
+      (typeof query.response_type !== 'string' ||
+        query.response_type !== 'code')
+    ) {
+      throw new BadRequestException('Unsupported OAuth response_type');
+    }
+
+    const allowedScopes = new Set(['openid', 'email', 'profile']);
+    if (query.scope !== undefined && typeof query.scope !== 'string') {
+      throw new BadRequestException('Invalid Google OAuth scope');
+    }
+    const scopes = query.scope?.trim().split(/\s+/).filter(Boolean);
+    if (scopes?.some((scope) => !allowedScopes.has(scope))) {
+      throw new BadRequestException('Unsupported Google OAuth scope');
+    }
+
+    if (
+      query.code_challenge !== undefined &&
+      (typeof query.code_challenge !== 'string' ||
+        !/^[A-Za-z0-9._~-]{43,128}$/.test(query.code_challenge))
+    ) {
+      throw new BadRequestException('Invalid PKCE code_challenge');
+    }
+    if (
+      query.code_challenge_method !== undefined &&
+      (typeof query.code_challenge_method !== 'string' ||
+        !['S256', 'plain'].includes(query.code_challenge_method))
+    ) {
+      throw new BadRequestException('Invalid PKCE code_challenge_method');
+    }
+    if (!query.code_challenge && query.code_challenge_method) {
+      throw new BadRequestException(
+        'code_challenge_method requires code_challenge',
+      );
+    }
+
+    const state = signGoogleOAuthState(
+      {
+        ...target,
+        state: clientState,
+        issuedAt: Date.now(),
+      },
+      this.configService.getOrThrow<string>('JWT_SECRET'),
+    );
+    const options: Parameters<OAuth2Client['generateAuthUrl']>[0] = {
+      redirect_uri: this.googleRedirectUri,
+      scope: scopes?.length ? scopes : ['openid', 'email', 'profile'],
+      state,
+      prompt: 'select_account',
+    };
+
+    if (typeof query.code_challenge === 'string') {
+      options.code_challenge = query.code_challenge;
+      options.code_challenge_method =
+        query.code_challenge_method === 'plain'
+          ? CodeChallengeMethod.Plain
+          : CodeChallengeMethod.S256;
+    }
+
+    return this.getGoogleClient().generateAuthUrl(options);
+  }
+
+  verifyGoogleOAuthState(state: string): GoogleOAuthState {
+    return verifyGoogleOAuthState(
+      state,
+      this.configService.getOrThrow<string>('JWT_SECRET'),
+    );
+  }
+
+  async authenticateGoogleCode(
+    code: string,
+    codeVerifier: string | undefined,
+    ipAddress: string,
+  ) {
+    const google = this.getGoogleClient();
+    let idToken: string | undefined;
+    try {
+      const { tokens } = await google.getToken({
+        code,
+        ...(codeVerifier ? { codeVerifier } : {}),
+        redirect_uri: this.googleRedirectUri,
+      });
+      idToken = tokens.id_token ?? undefined;
+    } catch (error) {
+      this.logger.warn(
+        `Google authorization code exchange failed: ${
+          error instanceof Error ? error.message : 'unknown provider error'
+        }`,
+      );
+      throw new UnauthorizedException(
+        'Invalid or expired Google authorization code',
+      );
+    }
+
+    if (!idToken) {
+      throw new UnauthorizedException(
+        'Google did not return an identity token',
+      );
+    }
+
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await google.verifyIdToken({
+        idToken,
+        audience: this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+      });
+      payload = ticket.getPayload();
+    } catch (error) {
+      this.logger.warn(
+        `Google identity token verification failed: ${
+          error instanceof Error ? error.message : 'unknown provider error'
+        }`,
+      );
+      throw new UnauthorizedException('Invalid Google identity token');
+    }
+
+    if (!payload?.email || payload.email_verified !== true) {
+      throw new UnauthorizedException(
+        'Google account does not have a verified email address',
+      );
+    }
+
+    const user = await this.findOrCreateGoogleUser(
+      payload.email,
+      payload.picture,
+    );
+    return this.login(user, ipAddress);
+  }
+
+  async getSessionUserState(userId: string) {
+    return this.usersService.getUserAuthState(userId);
   }
 
   private displayNameFromEmail(email: string): string {

@@ -8,9 +8,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/sequelize';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
@@ -42,8 +44,14 @@ describe('Google login token profile flow', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule.register({ secret: jwtSecret }), PassportModule],
-      controllers: [UsersController],
+      imports: [
+        JwtModule.register({
+          secret: jwtSecret,
+          signOptions: { expiresIn: '30d' },
+        }),
+        PassportModule,
+      ],
+      controllers: [UsersController, AuthController],
       providers: [
         AuthService,
         JwtStrategy,
@@ -53,6 +61,15 @@ describe('Google login token profile flow', () => {
           useValue: {
             get: (key: string) =>
               key === 'JWT_SECRET' ? jwtSecret : undefined,
+            getOrThrow: (key: string) => {
+              if (key === 'JWT_SECRET') {
+                return jwtSecret;
+              }
+              if (key === 'GOOGLE_REDIRECT_URI') {
+                return 'http://localhost:9080/api/auth/callback';
+              }
+              throw new Error(`Missing test configuration: ${key}`);
+            },
           },
         },
         { provide: getModelToken(User), useValue: {} },
@@ -72,6 +89,7 @@ describe('Google login token profile flow', () => {
 
     app = module.createNestApplication();
     app.setGlobalPrefix('api');
+    app.use(cookieParser());
     authService = module.get(AuthService);
     await app.init();
   });
@@ -94,5 +112,22 @@ describe('Google login token profile flow', () => {
 
     expect(response.body).toEqual(expect.objectContaining(userState));
     expect(response.body).toEqual(expect.objectContaining({ avatar }));
+  });
+
+  it('restores a web session from the HttpOnly authentication cookie', async () => {
+    const login = await authService.login(
+      { id: userId, email: 'student@example.com' } as User,
+      '127.0.0.1',
+      { notifyLoginEmail: false },
+    );
+
+    const response = await request(app.getHttpServer() as App)
+      .get('/api/auth/session')
+      .set('Cookie', `auth_token=${login.access_token}`)
+      .expect(200);
+
+    expect(response.body).toEqual(expect.objectContaining(userState));
+    expect(response.body).toHaveProperty('exp');
+    expect(response.body).toHaveProperty('cookieExpiration');
   });
 });

@@ -102,19 +102,28 @@ change the port.
 ### Google OAuth sign-in
 
 Create a Google OAuth 2.0 Web client in Google Cloud Console. Set its authorized
-redirect URI to the value of `GOOGLE_CALLBACK_URL` in `.env`, and configure
-`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, and
-`GOOGLE_MOBILE_REDIRECT_URI=exetatest://auth/google/callback`. The Google
-authorized redirect URI remains the backend callback; do not replace it with
-the app deep link. For the default local server port, the backend callback is
-`http://localhost:9080/api/auth/google/callback`.
+redirect URI to `GOOGLE_REDIRECT_URI` in `.env`, and configure
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `JWT_SECRET`,
+`WEB_URL`, and `APP_SCHEME`. For local development, use
+`http://localhost:9080/api/auth/callback` as the Google redirect URI and
+`http://localhost:8081` as `WEB_URL`. Register `http://localhost:9080` as an
+authorized JavaScript origin and the backend callback as the authorized redirect
+URI. Do not register the Expo web URL or app scheme with Google.
 
-Open `GET /api/auth/google` in a browser to start sign-in. Google redirects to
-the backend callback, which redirects the browser to the configured mobile app
-callback with an `access_token` query parameter. On failure it returns a generic
-`error` code instead. The app can use the token with
-`GET /api/users/me/profile`, whose response includes the user's avatar URL.
-Swagger documents both Google routes at `/api`.
+The client creates a random `state` (and a PKCE S256 verifier/challenge when
+available), then opens `GET /api/auth/authorize` with `redirect_uri` set to the
+Expo web URL or app scheme, `state`, and the optional PKCE challenge. The backend
+always sends `GOOGLE_REDIRECT_URI` to Google for authorization and token
+exchange. Google returns to that backend callback, which validates its signed
+state and redirects to the approved app URI with the authorization `code` and
+original `state`. The client posts `code`,
+`platform`, and the optional `code_verifier` to `POST /api/auth/token`. Mobile
+clients receive a Bearer JWT; web clients receive an HttpOnly `auth_token`
+cookie and can restore the session with `GET /api/auth/session`. Use
+`POST /api/auth/logout` to clear the web cookie. Web requests must include
+credentials. The existing OTP login flow is unchanged.
+
+Swagger documents the full Google OAuth flow at `/api`.
 
 ### Running Tests
 
@@ -131,8 +140,11 @@ npm run build
 |---|---|---|
 | POST | `/auth/otp/send` | Send a one-time login code by email |
 | POST | `/auth/otp/verify` | Verify the code and receive a JWT |
-| GET | `/auth/google` | Start Google OAuth sign-in in a browser |
-| GET | `/auth/google/callback` | Complete Google sign-in and redirect to the app with a JWT |
+| GET | `/auth/authorize` | Start Google OAuth sign-in |
+| GET | `/auth/callback` | Forward Google's authorization code to the approved client callback |
+| POST | `/auth/token` | Exchange the Google code for an EXETATEST session |
+| GET | `/auth/session` | Restore the authenticated user session |
+| POST | `/auth/logout` | Clear the web authentication cookie |
 | GET | `/auth/profile` | Get the authenticated user's profile |
 | GET | `/users/profile` | Get current user profile |
 | PATCH | `/users/profile` | Update current user profile |

@@ -11,8 +11,6 @@ import { JwtStrategy } from './jwt.strategy';
 import { EmailModule } from '../email/email.module';
 import { OtpCleanupService } from './otp-cleanup.service';
 import { UsersModule } from '../users/users.module';
-import { GoogleStrategy } from './google.strategy';
-import { GoogleAuthGuard } from './guards/google.auth.guard';
 
 @Module({
   imports: [
@@ -24,20 +22,14 @@ import { GoogleAuthGuard } from './guards/google.auth.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+        secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: { expiresIn: '30d' },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    GoogleAuthGuard,
-    OtpCleanupService,
-  ],
+  providers: [AuthService, JwtStrategy, OtpCleanupService],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

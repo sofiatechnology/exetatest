@@ -1,9 +1,11 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { join } from 'path';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ALLOWED_ORIGINS } from './common/constants/allowed-origins';
@@ -21,6 +23,7 @@ async function bootstrap() {
 
   // Correct client IP behind Render / reverse proxies
   app.set('trust proxy', 1);
+  app.use(cookieParser());
 
   // Enable compression middleware
   app.use(compression());
@@ -34,8 +37,18 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Enable CORS for approved application origins
+  const corsOrigins = new Set(ALLOWED_ORIGINS);
+  const configService = app.get(ConfigService);
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const webUrl = configService.get<string>('WEB_URL');
+  if (frontendUrl) {
+    corsOrigins.add(new URL(frontendUrl).origin);
+  }
+  if (webUrl) {
+    corsOrigins.add(new URL(webUrl).origin);
+  }
   app.enableCors({
-    origin: ALLOWED_ORIGINS,
+    origin: [...corsOrigins],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
@@ -53,7 +66,7 @@ async function bootstrap() {
     const config = new DocumentBuilder()
       .setTitle('EXETATEST')
       .setDescription(
-        'API for EXETATEST. Live quiz sessions use REST endpoints under /api/games and the Socket.IO namespace /games. The host connects with auth: { token }, then emits game:join with { pin_code }; players emit game:join with { pin_code, player_id } returned by POST /api/games/join. Listen for game:joined, game:started, game:player-joined, game:question, game:leaderboard, and game:ended. Submit answers with POST /api/games/{gameSessionId}/answers.',
+        'API for EXETATEST. Google sign-in uses GET /api/auth/authorize, GET /api/auth/callback, and POST /api/auth/token; web sessions use the HttpOnly auth_token cookie and mobile sessions use Bearer JWTs. Live quiz sessions use REST endpoints under /api/games and the Socket.IO namespace /games. The host connects with auth: { token }, then emits game:join with { pin_code }; players emit game:join with { pin_code, player_id } returned by POST /api/games/join. Listen for game:joined, game:started, game:player-joined, game:question, game:leaderboard, and game:ended. Submit answers with POST /api/games/{gameSessionId}/answers.',
       )
       .setVersion('1.0')
       .addBearerAuth(
@@ -66,6 +79,11 @@ async function bootstrap() {
           in: 'header',
         },
         'JWT-auth',
+      )
+      .addCookieAuth(
+        'auth_token',
+        { type: 'apiKey', in: 'cookie' },
+        'cookie-auth',
       )
       .build();
 
